@@ -1,26 +1,148 @@
 @import "tailwindcss";
 
+/*
+  Liquid depth gauge - design system.
+  Dark-first by design: the glowing amber gauge and the glass refraction need a
+  deep field to read against. One warm accent (amber) in a cold teal deep.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Abyssal ink (deep teal-navy, not slate-violet) */
+  --ink-900: #070d12;
+  --ink-800: #0b1620;
+  --ink-700: #102232;
+  --ink-600: #163044;
+
+  /* Living field: teal + ocean blue whose intensity rises with level */
+  --teal-400: #35e0d0;
+  --teal-500: #14b8b2;
+  --ocean-500: #1f6f9e;
+  --ocean-600: #164e73;
+
+  /* The single warm beacon */
+  --amber: #ffb454;
+  --amber-soft: #ffc98a;
+
+  /* Text on the deep */
+  --text-hi: #eaf6f8;
+  --text-mid: #9fb6c2;
+  --text-low: #62798a;
+
+  /* Frosted reading surface: teal-tinted, kept near-solid for 4.5:1 on text */
+  --glass-bg: rgba(13, 30, 43, 0.62);
+  --glass-bg-solid: #0d1e2b; /* @supports fallback when backdrop-filter is absent */
+  --glass-border: rgba(126, 205, 214, 0.16);
+  --glass-hi: rgba(255, 255, 255, 0.05);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+
+  /* Motion */
+  --ease-lens: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 180ms;
+  --dur-mid: 420ms;
+  --dur-slow: 900ms;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-teal-400: var(--teal-400);
+  --color-teal-500: var(--teal-500);
+  --color-ocean-500: var(--ocean-500);
+  --color-ocean-600: var(--ocean-600);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-text-hi: var(--text-hi);
+  --color-text-mid: var(--text-mid);
+  --color-text-low: var(--text-low);
+
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-arabic: var(--font-plex-arabic), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--ink-900);
+  color: var(--text-hi);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Arabic swaps the body face and mirrors direction. */
+html[lang="ar"] body {
+  font-family: var(--font-arabic);
+}
+
+/* The frosted reading lens. Built the safe way: a child blur layer, never
+   animating backdrop-filter, with a solid fallback where blur is unsupported. */
+.lens {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  box-shadow:
+    0 24px 80px -32px var(--glass-shadow),
+    inset 0 1px 0 0 var(--glass-hi);
+  backdrop-filter: blur(28px) saturate(1.3);
+  -webkit-backdrop-filter: blur(28px) saturate(1.3);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lens {
+    background: var(--glass-bg-solid);
+  }
+}
+
+/* The amber beacon pulse on a level update. */
+@keyframes beacon-pulse {
+  0% { opacity: 0.55; transform: scale(1); }
+  40% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 0.55; transform: scale(1); }
+}
+
+/* Slow drift of the living field. */
+@keyframes field-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -2.5%, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rise-in {
+  animation: rise-in var(--dur-mid) var(--ease-lens) both;
+}
+
+/* Focus ring on the amber accent, keyboard-first. */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Respect reduced motion: field goes static, transitions become instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

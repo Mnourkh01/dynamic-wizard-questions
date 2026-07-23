@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dynamic Wizard Questions
 
-## Getting Started
+Adaptive AI skill assessment. It asks free-text questions for a target role, grades each answer with AI, adapts the next question to the level you actually demonstrate, and ends with a score out of 1000 split across topics it derives from the role.
 
-First, run the development server:
+It borrows the Computerized Adaptive Testing loop (estimate ability, ask for maximum information, stop when confident) but grades open answers with an LLM instead of using a fixed multiple-choice bank. The design rule: **AI does the language work, deterministic code owns every number.**
+
+## v1 scope
+
+Single-user, local, unproctored self-assessment. The engine drives one personal Claude subscription through the local `claude` CLI, so it runs on a long-running local host, not serverless, and the report is labeled a self-assessment. Multi-user + a real API key + billing is v2.
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env      # set CLAUDE_CLI_PATH to your `claude` binary
+npm run db:migrate        # creates dev.db (SQLite)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+You must be signed into the `claude` CLI (it uses your subscription login). No `ANTHROPIC_API_KEY` is needed or used.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Interactive assessment
+npm run assess -- --role "Senior Backend Engineer"
 
-## Learn More
+# Unattended run with a synthetic candidate at a target level
+npm run assess -- --role "Backend Engineer" --auto 6
 
-To learn more about Next.js, take a look at the following resources:
+# Short/cheap run (cap the number of questions)
+MAX_QUESTIONS=6 npm run assess -- --role "Backend Engineer" --auto 6
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Prove the score measures skill (grades known-quality answers, checks ranking + variance)
+npm run validity
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Deterministic engine tests
+npm test
+```
 
-## Deploy on Vercel
+The web wizard (single-page "Liquid depth gauge") is Phase 2.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `PLAN.md` for the full plan, `docs/system.md` for the system graph, and `CLAUDE.md` for the project guide.

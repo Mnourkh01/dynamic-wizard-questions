@@ -1,0 +1,111 @@
+// Dynamic Wizard Questions - domain data model.
+// SQLite (v1 single-user local, no concurrent-write pressure).
+// JSON-shaped fields (persona, rubric, matched/missing/etc.) are stored as
+// TEXT holding JSON, because SQLite has no native JSON/array column and this
+// stays portable and debuggable.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Session {
+  id         String            @id @default(cuid())
+  role       String
+  persona    String? // JSON: { background?, years? }
+  language   String            @default("en") // "en" | "ar"
+  status     String            @default("active") // active | done | abandoned
+  finalScore Int? // 0..1000, set when done
+  reportJson String? // full SessionReport JSON, persisted for the report permalink
+  startedAt  DateTime          @default(now())
+  finishedAt DateTime?
+
+  topics    Topic[]
+  questions Question[]
+  snapshots AbilitySnapshot[]
+}
+
+model Topic {
+  id            String  @id @default(cuid())
+  sessionId     String
+  session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  name             String
+  order            Int // stable display order
+  weight           Int // normalized so all weights in a session sum to 1000
+  theta            Float // ability estimate, scale 1..10
+  sigma            Float // uncertainty (std dev of the estimate)
+  firstPickPrior   Float // persona-informed prior, aims only the first question
+  points           Int     @default(0) // weight * theta/10, filled at scoring
+  questionsAsked   Int     @default(0)
+  answeredCount    Int     @default(0) // graded observations (drives resume + stops)
+  consecutiveStrong Int    @default(0) // strong-answer streak for the ceiling probe
+  converged        Boolean @default(false)
+
+  questions Question[]
+  snapshots AbilitySnapshot[]
+
+  @@index([sessionId])
+}
+
+model Question {
+  id         String   @id @default(cuid())
+  sessionId  String
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  topicId    String
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  order      Int // global question order in the session
+  difficulty Int // 1..10 target band the question probes
+  text       String
+  rubric     String // JSON: { points: string[], gold: string, maxScore: number, level: number }
+  maxScore   Int      @default(100)
+  createdAt  DateTime @default(now())
+
+  answer Answer?
+
+  @@index([sessionId])
+  @@index([topicId])
+}
+
+model Answer {
+  id          String   @id @default(cuid())
+  questionId  String   @unique
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text        String
+  submittedAt DateTime @default(now())
+
+  evaluation Evaluation?
+}
+
+model Evaluation {
+  id                      String   @id @default(cuid())
+  answerId                String   @unique
+  answer                  Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  score                   Int // 0..100 raw grade
+  demonstratedLevel       Int // 1..10 level the answer demonstrates
+  llmConfidence           Float // grader self-reported 0..1 (display/log ONLY, never in math)
+  deterministicConfidence Float // the c value actually used by the engine
+  matched                 String // JSON string[]
+  missing                 String // JSON string[]
+  misconceptions          String // JSON string[]
+  feedback                String
+  createdAt               DateTime @default(now())
+}
+
+// One row per engine update: drives the level-over-time curve.
+model AbilitySnapshot {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  order     Int // global step order
+  theta     Float
+  sigma     Float
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+}
