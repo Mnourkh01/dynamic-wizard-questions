@@ -2,7 +2,9 @@ import "dotenv/config";
 import { createInterface } from "node:readline/promises";
 import { z } from "zod";
 import { costSoFarUsd, resetCostUsd, runAgent } from "@/agents/client";
+import { prisma } from "@/db/client";
 import type { Language, Persona } from "@/core/types";
+import { shutdownObservability } from "@/observability/langfuse";
 import { peekMcqAnswer, startSession, submitAnswer, type QuestionPayload } from "./session";
 
 // Phase 1 CLI harness. Drives a full assessment headless, before any UI exists.
@@ -170,10 +172,27 @@ async function main(): Promise<void> {
   const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
   console.log(`\nSession id: ${start.sessionId}`);
   console.log(`Cost: $${costSoFarUsd().toFixed(4)} · Time: ${secs}s`);
-  process.exit(0);
+  await shutdown();
+  // Exit naturally now that the tracer + DB are closed. Calling process.exit()
+  // here is what force-closed a native handle mid-flight and tripped the libuv
+  // UV_HANDLE_CLOSING assertion (exit 127).
 }
 
-main().catch((err) => {
+// Deliver the final Langfuse trace and close the DB connection before exiting, so
+// the process does not force-close a native handle mid-flight (the libuv
+// UV_HANDLE_CLOSING assertion that produced exit 127) and does not drop the
+// reporter trace.
+async function shutdown(): Promise<void> {
+  await shutdownObservability();
+  try {
+    await prisma.$disconnect();
+  } catch {
+    // best-effort
+  }
+}
+
+main().catch(async (err) => {
   console.error("Runner failed:", err);
+  await shutdown();
   process.exit(1);
 });

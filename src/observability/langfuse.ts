@@ -52,3 +52,14 @@ export function traceAgent(trace: AgentTrace): void {
     // best-effort only
   }
 }
+
+// Flush any pending traces and stop the SDK's background flush timer, so a
+// short-lived process (the CLI runner) delivers the final trace and exits without
+// a dangling handle. Best-effort: never throws, and a no-op when tracing is off.
+export async function shutdownObservability(): Promise<void> {
+  try {
+    if (client) await client.shutdownAsync();
+  } catch {
+    // best-effort only
+  }
+}
