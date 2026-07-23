@@ -37,21 +37,38 @@ export function normalizeImportanceTo1000(raw: number[]): number[] {
 // Turn final topic states into the 1000-point split. Per-topic points =
 // round(importance * theta/10); the headline is the sum of the shown points, so
 // the number the user sees always equals its parts.
+//
+// Only topics that were ACTUALLY assessed (answeredCount > 0) count. A topic never
+// reached before the question budget ran out is "not assessed", NOT a failure, so
+// it must not drag the score down as if the candidate scored zero on it. The tested
+// topics' importance is renormalized to 1000 so the headline reflects measured
+// ability across what was covered.
 export function computeFinalScore(topics: TopicState[]): FinalScore {
-  const scored: TopicScore[] = topics.map((t) => ({
-    name: t.name,
-    importance: t.importance,
-    theta: t.theta,
-    sigma: t.sigma,
-    points: Math.round(t.importance * (t.theta / 10)),
-    label: levelLabel(t.theta),
-  }));
+  const tested = topics.filter((t) => t.answeredCount > 0);
+  const renorm = normalizeImportanceTo1000(tested.map((t) => t.importance));
+
+  let ti = 0;
+  const scored: TopicScore[] = topics.map((t) => {
+    if (t.answeredCount === 0) {
+      return { name: t.name, importance: 0, theta: t.theta, sigma: t.sigma, points: 0, label: "not assessed" };
+    }
+    const importance = renorm[ti++];
+    return {
+      name: t.name,
+      importance,
+      theta: t.theta,
+      sigma: t.sigma,
+      points: Math.round(importance * (t.theta / 10)),
+      label: levelLabel(t.theta),
+    };
+  });
 
   const total = scored.reduce((sum, t) => sum + t.points, 0);
 
-  // Confidence band: each topic contributes (importance/10)*sigma of point
+  // Confidence band: each tested topic contributes (importance/10)*sigma of point
   // uncertainty; combine independently (root-sum-square) for the headline band.
-  const variance = topics.reduce((sum, t) => {
+  // Untested topics have importance 0 here, so they add nothing.
+  const variance = scored.reduce((sum, t) => {
     const sd = (t.importance / 10) * t.sigma;
     return sum + sd * sd;
   }, 0);

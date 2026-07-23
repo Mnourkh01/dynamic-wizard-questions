@@ -4,8 +4,8 @@ import {
   GLOBAL_MAX_QUESTIONS,
   INITIAL_SIGMA,
   MAX_QUESTIONS_PER_TOPIC,
-  NEUTRAL_START_THETA,
   SIGMA_FLOOR,
+  START_THETA,
 } from "./constants";
 import {
   applyGrade,
@@ -14,6 +14,7 @@ import {
   initTopicState,
   isTopicConverged,
   nextDifficulty,
+  runningAbility,
   selectTopicIndex,
 } from "./policy";
 import type { Grade, TopicBlueprint, TopicState } from "./types";
@@ -22,8 +23,8 @@ function topic(overrides: Partial<TopicState> = {}): TopicState {
   return {
     name: "T",
     importance: 100,
-    theta: NEUTRAL_START_THETA,
-    sigma: INITIAL_SIGMA,
+    theta: 5, // mid, so the Kalman-math cases below read cleanly (overridden per test)
+    sigma: 2, // fixed here so the Kalman-math cases are stable regardless of INITIAL_SIGMA
     startLevel: 5,
     questionsAsked: 0,
     answeredCount: 0,
@@ -46,10 +47,10 @@ function grade(overrides: Partial<Grade> = {}): Grade {
 }
 
 describe("initTopicState", () => {
-  it("starts the running estimate neutral, stores the startLevel separately", () => {
+  it("starts the running estimate LOW at the 101 level, stores the startLevel separately", () => {
     const bp: TopicBlueprint = { name: "Concurrency", importance: 300, startLevel: 8 };
     const t = initTopicState(bp);
-    expect(t.theta).toBe(NEUTRAL_START_THETA); // NOT the startLevel
+    expect(t.theta).toBe(START_THETA); // starts at 101, NOT the startLevel, NOT mid
     expect(t.startLevel).toBe(8);
     expect(t.sigma).toBe(INITIAL_SIGMA);
     expect(t.answeredCount).toBe(0);
@@ -133,57 +134,85 @@ describe("isTopicConverged", () => {
   });
 });
 
-describe("nextDifficulty", () => {
-  it("opens every topic with a broad discovery question, ignoring the startLevel", () => {
-    const d = nextDifficulty(topic({ answeredCount: 0, startLevel: 8, theta: 5 }));
-    expect(d.difficulty).toBe(DISCOVERY_LEVEL);
-    expect(d.discovery).toBe(true);
-    expect(d.ceilingProbe).toBe(false);
-    expect(d.format).toBe("mcq");
-  });
-
-  it("tracks the live estimate after the first question (fast-forward)", () => {
+describe("nextDifficulty (a topic already underway)", () => {
+  it("tracks the live estimate as a fast MCQ", () => {
     const d = nextDifficulty(topic({ answeredCount: 1, theta: 6.4, consecutiveStrong: 0 }));
     expect(d.difficulty).toBe(6);
-    expect(d.discovery).toBe(false);
     expect(d.ceilingProbe).toBe(false);
     expect(d.format).toBe("mcq");
   });
 
-  it("probes one level up after a run of strong answers", () => {
+  it("drops the level after wrong answers (lower theta -> lower difficulty), never resets", () => {
+    const d = nextDifficulty(topic({ answeredCount: 3, theta: 3.2, consecutiveStrong: 0 }));
+    expect(d.difficulty).toBe(3);
+    expect(d.ceilingProbe).toBe(false);
+  });
+
+  it("probes one level up after a run of strong answers, as a fast MCQ", () => {
     const d = nextDifficulty(topic({ answeredCount: 2, theta: 6, consecutiveStrong: 2 }));
     expect(d.difficulty).toBe(7);
     expect(d.ceilingProbe).toBe(true);
-    expect(d.format).toBe("text");
+    expect(d.format).toBe("mcq");
+  });
+});
+
+describe("runningAbility", () => {
+  it("averages assessed topics, ignoring unstarted ones", () => {
+    const topics = [
+      topic({ answeredCount: 2, theta: 8 }),
+      topic({ answeredCount: 1, theta: 4 }),
+      topic({ answeredCount: 0, theta: START_THETA }), // ignored
+    ];
+    expect(runningAbility(topics)).toBe(6); // (8 + 4) / 2
+  });
+
+  it("falls back to the start level before anything is assessed", () => {
+    expect(runningAbility([topic({ answeredCount: 0 })])).toBe(START_THETA);
   });
 });
 
 describe("selectTopicIndex", () => {
-  it("picks the highest-uncertainty topic, tie-broken by importance", () => {
+  it("finishes an in-progress topic before starting a new one", () => {
     const topics = [
-      topic({ name: "a", sigma: 0.8, importance: 100 }),
-      topic({ name: "b", sigma: 1.5, importance: 100 }),
-      topic({ name: "c", sigma: 1.5, importance: 300 }),
+      topic({ name: "a", answeredCount: 0, importance: 300 }), // unstarted, most important
+      topic({ name: "b", answeredCount: 1, sigma: 1.2, importance: 100 }), // underway
     ];
-    expect(selectTopicIndex(topics)).toBe(2); // same sigma as b, higher importance
+    expect(selectTopicIndex(topics)).toBe(1); // stay on the in-progress ladder
   });
 
-  it("skips converged topics and returns -1 when all converged", () => {
-    const topics = [topic({ converged: true }), topic({ converged: true })];
-    expect(selectTopicIndex(topics)).toBe(-1);
+  it("opens the next unstarted topic most important first", () => {
+    const topics = [
+      topic({ name: "a", answeredCount: 0, importance: 100 }),
+      topic({ name: "b", answeredCount: 0, importance: 300 }),
+      topic({ name: "c", answeredCount: 0, importance: 200 }),
+    ];
+    expect(selectTopicIndex(topics)).toBe(1); // highest importance among unstarted
+  });
+
+  it("keeps going on the least-covered topic when everything is settled (full length)", () => {
+    const topics = [
+      topic({ name: "a", converged: true, answeredCount: 5, sigma: 0.4 }),
+      topic({ name: "b", converged: true, answeredCount: 3, sigma: 0.5 }),
+    ];
+    expect(selectTopicIndex(topics)).toBe(1); // fewer answered -> spend more here
+  });
+
+  it("returns -1 only when there are no topics", () => {
+    expect(selectTopicIndex([])).toBe(-1);
   });
 });
 
 describe("decide", () => {
-  it("stops at the global question cap", () => {
+  it("ends only at the fixed question count", () => {
     expect(decide([topic()], GLOBAL_MAX_QUESTIONS).kind).toBe("done");
+    expect(decide([topic()], GLOBAL_MAX_QUESTIONS - 1).kind).toBe("ask");
   });
 
-  it("stops when every topic has converged", () => {
-    expect(decide([topic({ converged: true })], 3).kind).toBe("done");
+  it("does NOT stop early when topics have converged (runs the full length)", () => {
+    expect(decide([topic({ converged: true, answeredCount: 3 })], 3).kind).toBe("ask");
   });
 
-  it("opens with a discovery question on the selected topic", () => {
+  it("opens with the written 101 warm-up on the first question only", () => {
     const d = decide([topic({ answeredCount: 0, startLevel: 7 })], 0);
     expect(d).toEqual({
       kind: "ask",
@@ -191,7 +220,22 @@ describe("decide", () => {
       difficulty: DISCOVERY_LEVEL,
       ceilingProbe: false,
       discovery: true,
-      format: "mcq",
+      format: "text",
     });
+  });
+
+  it("opens a LATER topic at the carried running ability (no warm-up reset), as MCQ", () => {
+    const topics = [
+      topic({ name: "done", answeredCount: 3, converged: true, theta: 6 }),
+      topic({ name: "fresh", answeredCount: 0, theta: START_THETA }),
+    ];
+    const d = decide(topics, 3);
+    expect(d.kind).toBe("ask");
+    if (d.kind !== "ask") return;
+    expect(d.topicIndex).toBe(1);
+    expect(d.discovery).toBe(false); // NOT a warm-up
+    expect(d.format).toBe("mcq");
+    expect(d.seedTheta).toBe(6); // carried from the assessed topic
+    expect(d.difficulty).toBe(6);
   });
 });

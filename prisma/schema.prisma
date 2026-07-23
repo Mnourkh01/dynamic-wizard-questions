@@ -14,10 +14,12 @@ datasource db {
 }
 
 model Session {
-  id         String            @id @default(cuid())
-  role       String
-  persona    String? // JSON: { background?, years? }
-  language   String            @default("en") // "en" | "ar"
+  id             String        @id @default(cuid())
+  role           String
+  specialization String? // the chosen stack/focus (e.g. "Python / Data + ML"); scopes the topics
+  candidateName  String? // optional name or id shown on the report
+  persona        String? // JSON: { background?, years? }
+  language       String        @default("en") // "en" | "ar"
   status     String            @default("active") // active | done | abandoned
   finalScore Int? // 0..1000, set when done
   reportJson String? // full SessionReport JSON, persisted for the report permalink

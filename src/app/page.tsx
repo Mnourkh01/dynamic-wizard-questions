@@ -1,13 +1,13 @@
 "use client";
 
 import { gsap } from "gsap";
-import { ArrowRight, Link2, Loader2, RotateCcw, Waves } from "lucide-react";
+import { ArrowLeft, ArrowRight, Link2, Loader2, RotateCcw, Waves } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerField } from "@/components/AnswerField";
 import { DepthField } from "@/components/DepthField";
 import { DepthGauge } from "@/components/DepthGauge";
 import { ResultPanel } from "@/components/ResultPanel";
-import { dirFor, ROLE_PRESETS, UI, type UILang } from "@/lib/i18n";
+import { dirFor, ROLE_PRESETS, specializationsFor, UI, type UILang } from "@/lib/i18n";
 import type { AnswerResult, QuestionPayload, SessionReport, StartResult } from "@/lib/types";
 
 type Phase = "setup" | "question" | "result";
@@ -21,9 +21,13 @@ export default function Home() {
   const [busy, setBusy] = useState<Busy>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Setup form.
+  // Setup form (two steps: role, then focus + name).
+  const [setupStep, setSetupStep] = useState<"role" | "focus">("role");
   const [role, setRole] = useState("");
   const [customMode, setCustomMode] = useState(false);
+  const [specChoice, setSpecChoice] = useState<string | null>(null); // null = general
+  const [customSpec, setCustomSpec] = useState("");
+  const [candidateName, setCandidateName] = useState("");
   const [showPersona, setShowPersona] = useState(false);
   const [years, setYears] = useState("");
   const [background, setBackground] = useState("");
@@ -62,6 +66,16 @@ export default function Home() {
 
   const gaugeLevel = current?.difficulty ?? 0;
 
+  // Step 1 -> step 2. Role must be valid before choosing a focus.
+  const goToFocus = useCallback(() => {
+    if (role.trim().length < 2) {
+      setError(t.errorGeneric);
+      return;
+    }
+    setError(null);
+    setSetupStep("focus");
+  }, [role, t]);
+
   const start = useCallback(async () => {
     if (role.trim().length < 2) {
       setError(t.errorGeneric);
@@ -76,10 +90,23 @@ export default function Home() {
             background: background.trim() || undefined,
           }
         : undefined;
+      // null choice = general (no specialization); "__other__" = the typed value.
+      const specialization =
+        specChoice === null
+          ? undefined
+          : specChoice === "__other__"
+            ? customSpec.trim() || undefined
+            : specChoice;
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ role: role.trim(), persona, language: lang }),
+        body: JSON.stringify({
+          role: role.trim(),
+          specialization,
+          candidateName: candidateName.trim() || undefined,
+          persona,
+          language: lang,
+        }),
       });
       const data = (await res.json()) as StartResult & { error?: string };
       if (!res.ok || !data.ok) {
@@ -97,7 +124,7 @@ export default function Home() {
     } finally {
       setBusy(false);
     }
-  }, [role, showPersona, years, background, lang, t]);
+  }, [role, specChoice, customSpec, candidateName, showPersona, years, background, lang, t]);
 
   const submit = useCallback(async () => {
     if (!sessionId || !current || busy) return;
@@ -138,8 +165,12 @@ export default function Home() {
 
   const restart = useCallback(() => {
     setPhase("setup");
+    setSetupStep("role");
     setRole("");
     setCustomMode(false);
+    setSpecChoice(null);
+    setCustomSpec("");
+    setCandidateName("");
     setYears("");
     setBackground("");
     setShowPersona(false);
@@ -159,6 +190,13 @@ export default function Home() {
   }, [sessionId]);
 
   const busyLabel = busy === "starting" ? t.starting : t.grading;
+
+  // Shared pill style for the role/focus chips (amber when active).
+  const chipStyle = (active: boolean) => ({
+    border: `1px solid ${active ? "var(--amber)" : "var(--glass-border)"}`,
+    background: active ? "rgba(255,180,84,0.14)" : "transparent",
+    color: active ? "var(--text-hi)" : "var(--text-mid)",
+  });
 
   return (
     <>
@@ -194,119 +232,204 @@ export default function Home() {
                   className="mt-4 text-3xl sm:text-4xl"
                   style={{ fontFamily: "var(--font-display)", color: "var(--text-hi)" }}
                 >
-                  {t.setupTitle}
+                  {setupStep === "role" ? t.setupTitle : t.step2Title}
                 </h1>
                 <p className="mt-3 text-sm" style={{ color: "var(--text-mid)" }}>
-                  {t.setupHint}
+                  {setupStep === "role" ? t.setupHint : t.step2Hint}
                 </p>
 
-                <div className="mt-8 text-start">
-                  <p className="text-xs uppercase tracking-widest" style={{ color: "var(--text-low)" }}>
-                    {t.roleLabel}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {ROLE_PRESETS.map((r) => {
-                      const selected = !customMode && role === r;
-                      return (
+                {/* STEP 1: ROLE */}
+                {setupStep === "role" && (
+                  <div className="mt-8 text-start">
+                    <p className="text-xs uppercase tracking-widest" style={{ color: "var(--text-low)" }}>
+                      {t.roleLabel}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {ROLE_PRESETS.map((r) => (
                         <button
                           key={r}
                           type="button"
                           onClick={() => {
                             setCustomMode(false);
                             setRole(r);
+                            setSpecChoice(null);
+                            setCustomSpec("");
                           }}
                           className="rounded-full px-4 py-2 text-sm transition-colors"
-                          style={{
-                            border: `1px solid ${selected ? "var(--amber)" : "var(--glass-border)"}`,
-                            background: selected ? "rgba(255,180,84,0.14)" : "transparent",
-                            color: selected ? "var(--text-hi)" : "var(--text-mid)",
-                          }}
+                          style={chipStyle(!customMode && role === r)}
                         >
                           {r}
                         </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomMode(true);
-                        setRole("");
-                      }}
-                      className="rounded-full px-4 py-2 text-sm transition-colors"
-                      style={{
-                        border: `1px solid ${customMode ? "var(--amber)" : "var(--glass-border)"}`,
-                        background: customMode ? "rgba(255,180,84,0.14)" : "transparent",
-                        color: customMode ? "var(--text-hi)" : "var(--text-mid)",
-                      }}
-                    >
-                      {t.otherRole}
-                    </button>
-                  </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomMode(true);
+                          setRole("");
+                          setSpecChoice(null);
+                          setCustomSpec("");
+                        }}
+                        className="rounded-full px-4 py-2 text-sm transition-colors"
+                        style={chipStyle(customMode)}
+                      >
+                        {t.otherRole}
+                      </button>
+                    </div>
 
-                  {customMode && (
+                    {customMode && (
+                      <input
+                        id="role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && goToFocus()}
+                        placeholder={t.rolePlaceholder}
+                        dir="auto"
+                        aria-label={t.rolePlaceholder}
+                        className="mt-3 w-full rounded-2xl px-5 py-4 text-[15px] outline-none"
+                        style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
+                      />
+                    )}
+
+                    <div className="mt-8 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={goToFocus}
+                        disabled={role.trim().length < 2}
+                        className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-[15px] font-medium transition-transform hover:scale-[1.02] disabled:opacity-60"
+                        style={{ background: "var(--amber)", color: "#241300" }}
+                      >
+                        {t.next} <ArrowRight size={18} aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: FOCUS + NAME */}
+                {setupStep === "focus" && (
+                  <div className="mt-8 text-start">
+                    <p className="text-xs uppercase tracking-widest" style={{ color: "var(--text-low)" }}>
+                      {t.specializationLabel}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSpecChoice(null)}
+                        className="rounded-full px-4 py-2 text-sm transition-colors"
+                        style={chipStyle(specChoice === null)}
+                      >
+                        {t.generalFocus}
+                      </button>
+                      {specializationsFor(role).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSpecChoice(s)}
+                          className="rounded-full px-4 py-2 text-sm transition-colors"
+                          style={chipStyle(specChoice === s)}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setSpecChoice("__other__")}
+                        className="rounded-full px-4 py-2 text-sm transition-colors"
+                        style={chipStyle(specChoice === "__other__")}
+                      >
+                        {t.otherRole}
+                      </button>
+                    </div>
+
+                    {specChoice === "__other__" && (
+                      <input
+                        value={customSpec}
+                        onChange={(e) => setCustomSpec(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && start()}
+                        placeholder={t.specializationOtherPlaceholder}
+                        dir="auto"
+                        aria-label={t.specializationLabel}
+                        className="mt-3 w-full rounded-2xl px-5 py-4 text-[15px] outline-none"
+                        style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
+                      />
+                    )}
+
+                    <p className="mt-6 text-xs uppercase tracking-widest" style={{ color: "var(--text-low)" }}>
+                      {t.nameLabel}
+                    </p>
                     <input
-                      id="role"
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && start()}
-                      placeholder={t.rolePlaceholder}
+                      value={candidateName}
+                      onChange={(e) => setCandidateName(e.target.value)}
+                      placeholder={t.namePlaceholder}
                       dir="auto"
-                      aria-label={t.rolePlaceholder}
-                      className="mt-3 w-full rounded-2xl px-5 py-4 text-[15px] outline-none"
+                      aria-label={t.nameLabel}
+                      className="mt-2 w-full rounded-2xl px-5 py-4 text-[15px] outline-none"
                       style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
                     />
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => setShowPersona((s) => !s)}
-                    className="mt-3 text-sm underline-offset-4 hover:underline"
-                    style={{ color: "var(--text-low)" }}
-                  >
-                    {t.personaToggle}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPersona((s) => !s)}
+                      className="mt-3 text-sm underline-offset-4 hover:underline"
+                      style={{ color: "var(--text-low)" }}
+                    >
+                      {t.personaToggle}
+                    </button>
 
-                  {showPersona && (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr]">
-                      <input
-                        aria-label={t.yearsLabel}
-                        value={years}
-                        onChange={(e) => setYears(e.target.value.replace(/[^0-9]/g, ""))}
-                        placeholder={t.yearsLabel}
-                        inputMode="numeric"
-                        className="rounded-2xl px-4 py-3 text-sm outline-none"
-                        style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
-                      />
-                      <input
-                        aria-label={t.backgroundLabel}
-                        value={background}
-                        onChange={(e) => setBackground(e.target.value)}
-                        placeholder={t.backgroundPlaceholder}
-                        dir="auto"
-                        className="rounded-2xl px-4 py-3 text-sm outline-none"
-                        style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
-                      />
+                    {showPersona && (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr]">
+                        <input
+                          aria-label={t.yearsLabel}
+                          value={years}
+                          onChange={(e) => setYears(e.target.value.replace(/[^0-9]/g, ""))}
+                          placeholder={t.yearsLabel}
+                          inputMode="numeric"
+                          className="rounded-2xl px-4 py-3 text-sm outline-none"
+                          style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
+                        />
+                        <input
+                          aria-label={t.backgroundLabel}
+                          value={background}
+                          onChange={(e) => setBackground(e.target.value)}
+                          placeholder={t.backgroundPlaceholder}
+                          dir="auto"
+                          className="rounded-2xl px-4 py-3 text-sm outline-none"
+                          style={{ background: "rgba(3,10,16,0.4)", border: "1px solid var(--glass-border)", color: "var(--text-hi)" }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="mt-8 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSetupStep("role");
+                          setError(null);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm transition-colors"
+                        style={{ border: "1px solid var(--glass-border)", color: "var(--text-mid)" }}
+                      >
+                        <ArrowLeft size={16} aria-hidden /> {t.back}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={start}
+                        disabled={busy !== false || role.trim().length < 2}
+                        className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-[15px] font-medium transition-transform hover:scale-[1.02] disabled:opacity-60"
+                        style={{ background: "var(--amber)", color: "#241300" }}
+                      >
+                        {busy === "starting" ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" aria-hidden /> {t.starting}
+                          </>
+                        ) : (
+                          <>
+                            {t.start} <ArrowRight size={18} aria-hidden />
+                          </>
+                        )}
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={start}
-                  disabled={busy !== false || role.trim().length < 2}
-                  className="mt-8 inline-flex items-center gap-2 rounded-full px-7 py-3 text-[15px] font-medium transition-transform hover:scale-[1.02] disabled:opacity-60"
-                  style={{ background: "var(--amber)", color: "#241300" }}
-                >
-                  {busy === "starting" ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" aria-hidden /> {t.starting}
-                    </>
-                  ) : (
-                    <>
-                      {t.start} <ArrowRight size={18} aria-hidden />
-                    </>
-                  )}
-                </button>
+                  </div>
+                )}
 
                 {error && (
                   <p className="mt-4 text-sm" style={{ color: "var(--amber-soft)" }} role="alert">

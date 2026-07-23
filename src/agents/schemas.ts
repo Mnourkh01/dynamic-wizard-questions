@@ -62,10 +62,28 @@ export const ReportTopicSchema = z.object({
   gaps: z.array(z.string()),
 });
 
+// A single concrete weak point, so the report can lead with what to fix instead of
+// burying it in prose. area names the topic/theme, issue is the specific weakness.
+export const WeakPointSchema = z.object({
+  area: z.string().min(1).describe("The topic or theme this weakness is in"),
+  issue: z.string().min(1).describe("The specific weakness, concrete and plain"),
+});
+
 export const ReportOutputSchema = z.object({
-  summary: z.string().describe("A short honest overview of the self-assessment result"),
+  verdict: z
+    .string()
+    .min(1)
+    .describe(
+      "One or two blunt, plain sentences: the overall level reached and the single biggest thing holding them back. No jargon.",
+    ),
+  summary: z
+    .string()
+    .describe("A short, plain, honest overview of the self-assessment result. Everyday words, no filler."),
+  weakPoints: z
+    .array(WeakPointSchema)
+    .describe("The main weak points, most important first, so the gaps are obvious at a glance"),
   perTopic: z.array(ReportTopicSchema),
-  learningPath: z.array(z.string()).describe("Ordered, concrete next steps to improve"),
+  learningPath: z.array(z.string()).describe("Ordered, concrete next steps to improve, hardest gaps first"),
 });
 export type ReportOutput = z.infer<typeof ReportOutputSchema>;
 

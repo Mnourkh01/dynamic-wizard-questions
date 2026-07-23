@@ -27,7 +27,7 @@ export async function runQuestion(input: {
   alreadyAsked: string[];
   language: Language;
 }): Promise<{ data: QuestionOutput; costUsd: number }> {
-  const cfg = AGENTS.question;
+  const cfg = AGENTS.questionWriter;
   const personaText = input.persona ? JSON.stringify(input.persona) : "none provided";
   const asked =
     input.alreadyAsked.length > 0 ? input.alreadyAsked.join("\n---\n") : "none yet";
@@ -46,7 +46,7 @@ export async function runQuestion(input: {
   ].join("\n\n");
 
   const res = await runAgent({
-    agent: "question",
+    agent: "question-writer",
     model: cfg.model,
     system: SYSTEM,
     user,

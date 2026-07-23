@@ -14,6 +14,20 @@ export function ResultPanel({ report, t }: { report: SessionReport; t: UIStrings
         >
           {t.selfAssessment}
         </span>
+        {report.candidateName && (
+          <p
+            className="mt-4 text-lg"
+            style={{ fontFamily: "var(--font-display)", color: "var(--text-hi)" }}
+          >
+            {t.assessmentFor} {report.candidateName}
+          </p>
+        )}
+        {report.role && (
+          <p className="mt-2 text-xs uppercase tracking-widest" style={{ color: "var(--text-low)" }}>
+            {report.role}
+            {report.specialization ? ` · ${report.specialization}` : ""}
+          </p>
+        )}
         <div className="mt-6 flex items-end justify-center gap-2">
           <span
             className="text-7xl leading-none sm:text-8xl"
@@ -30,6 +44,14 @@ export function ResultPanel({ report, t }: { report: SessionReport; t: UIStrings
           {"  "}
           <span style={{ fontFamily: "var(--font-mono)" }}>± {report.confidenceInterval}</span>
         </p>
+        {report.verdict && (
+          <p
+            className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed"
+            style={{ color: "var(--text-hi)" }}
+          >
+            {report.verdict}
+          </p>
+        )}
       </header>
 
       <TopicColumns
@@ -47,6 +69,32 @@ export function ResultPanel({ report, t }: { report: SessionReport; t: UIStrings
       >
         {report.summary}
       </p>
+
+      {report.weakPoints && report.weakPoints.length > 0 && (
+        <section>
+          <h2
+            className="text-center text-sm uppercase tracking-widest"
+            style={{ color: "var(--amber)" }}
+          >
+            {t.weakPointsLabel}
+          </h2>
+          <ul className="mx-auto mt-4 max-w-2xl space-y-3">
+            {report.weakPoints.map((w, i) => (
+              <li key={i} className="flex gap-4">
+                <span
+                  className="shrink-0 text-sm"
+                  style={{ fontFamily: "var(--font-mono)", color: "var(--amber)" }}
+                >
+                  {(i + 1).toString().padStart(2, "0")}
+                </span>
+                <span className="text-[15px] leading-relaxed" style={{ color: "var(--text-mid)" }}>
+                  <strong style={{ color: "var(--text-hi)" }}>{w.area}.</strong> {w.issue}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2">
         {report.perTopic.map((topic) => (

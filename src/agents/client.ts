@@ -34,14 +34,66 @@ const DISALLOWED_TOOLS = [
 // explicitly so the spawn cannot ENOENT from inside a bundled Next route.
 const CLAUDE_CLI_PATH = process.env.CLAUDE_CLI_PATH || undefined;
 
-// Process-wide spend accumulator. Lets a CLI run or an API request report how
-// much a session cost without threading cost through every return value.
+// Token usage for one agent call, pulled straight from the SDK result. The CLI
+// grader is billed on a subscription, but the raw token counts are what tell you
+// where a session spends, so we surface them per agent instead of throwing them
+// away with only the dollar figure.
+export interface AgentUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+}
+
+// Per-agent running totals for one session, so a CLI run can print a breakdown
+// (which agent burned the most tokens) and Langfuse gets the same numbers.
+export interface AgentSpend extends AgentUsage {
+  agent: string;
+  calls: number;
+  costUsd: number;
+}
+
+// Process-wide spend accumulators. Let a CLI run or an API request report how
+// much a session cost, and where, without threading cost through every return.
 let _totalCostUsd = 0;
+const _spendByAgent = new Map<string, AgentSpend>();
+
+function recordSpend(agent: string, costUsd: number, usage: AgentUsage): void {
+  _totalCostUsd += costUsd;
+  const prev =
+    _spendByAgent.get(agent) ??
+    {
+      agent,
+      calls: 0,
+      costUsd: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+    };
+  _spendByAgent.set(agent, {
+    agent,
+    calls: prev.calls + 1,
+    costUsd: prev.costUsd + costUsd,
+    inputTokens: prev.inputTokens + usage.inputTokens,
+    outputTokens: prev.outputTokens + usage.outputTokens,
+    cacheReadTokens: prev.cacheReadTokens + usage.cacheReadTokens,
+    cacheCreationTokens: prev.cacheCreationTokens + usage.cacheCreationTokens,
+  });
+}
+
 export function costSoFarUsd(): number {
   return _totalCostUsd;
 }
+
+// Per-agent breakdown of the current session's spend, ordered highest cost first.
+export function costBreakdown(): AgentSpend[] {
+  return [..._spendByAgent.values()].sort((a, b) => b.costUsd - a.costUsd);
+}
+
 export function resetCostUsd(): void {
   _totalCostUsd = 0;
+  _spendByAgent.clear();
 }
 
 export class AgentError extends Error {
@@ -68,6 +120,7 @@ export interface AgentRunInput<S extends z.ZodType> {
 export interface AgentRunResult<T> {
   data: T;
   costUsd: number;
+  usage: AgentUsage;
   sessionId: string;
   durationMs: number;
   raw: string;
@@ -143,19 +196,29 @@ async function runOnce<S extends z.ZodType>(
   const candidate = resultMsg.structured_output ?? extractJson(raw);
   const data = input.schema.parse(candidate) as z.infer<S>;
   const costUsd = resultMsg.total_cost_usd ?? 0;
-  _totalCostUsd += costUsd;
+
+  // Token counts come straight off the SDK result (usage is snake_case BetaUsage).
+  const u = resultMsg.usage;
+  const usage: AgentUsage = {
+    inputTokens: u?.input_tokens ?? 0,
+    outputTokens: u?.output_tokens ?? 0,
+    cacheReadTokens: u?.cache_read_input_tokens ?? 0,
+    cacheCreationTokens: u?.cache_creation_input_tokens ?? 0,
+  };
+  recordSpend(input.agent, costUsd, usage);
 
   traceAgent({
     agent: input.agent,
     model: input.model,
     costUsd,
+    usage,
     durationMs,
     sessionId,
     input: input.user,
     output: data,
   });
 
-  return { data, costUsd, sessionId, durationMs, raw };
+  return { data, costUsd, usage, sessionId, durationMs, raw };
 }
 
 // One retry: a fresh query re-rolls the model, which clears most transient

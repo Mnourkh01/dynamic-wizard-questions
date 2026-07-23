@@ -21,16 +21,28 @@ export function levelLabel(theta: number): string {
   return "staff/expert";
 }
 
+// Present difficulty as an organized course level (101..110), so a question at a
+// given level reads as a rung on a ladder rather than a vague "hard" label.
+export function courseLevel(level: number): number {
+  return 100 + clamp(level, THETA_MIN, THETA_MAX);
+}
+
 // A short description of what a question at this level should demand, handed to
-// the Question agent so difficulty is grounded, not vibes.
+// the Question agent so difficulty is grounded, not vibes. Framed as a course
+// ladder (101 -> 102 -> 103 ...) so each level BUILDS on the one below instead of
+// repeating it.
 export function difficultyBrief(level: number): string {
   const l = clamp(level, THETA_MIN, THETA_MAX);
+  const c = courseLevel(l);
   if (l <= 2)
-    return "a broad, open discovery question that asks the candidate to explain a core concept of the topic and how it works. It must be answerable simply by a beginner AND allow an expert to reveal real depth (internals, trade-offs). Not a narrow scenario, not a trick, not multi-part.";
-  if (l <= 4) return "a straightforward applied question expected of a junior practitioner";
-  if (l <= 6) return "a practical scenario question requiring solid mid-level understanding";
-  if (l <= 8) return "a deep design or trade-off question expected of a senior engineer";
-  return "an expert question probing edge cases, failure modes, or architecture at scale";
+    return `a level ${c} (101-style) intro question: simple and foundational, asking the candidate to explain a core concept of the topic in plain terms. Answerable by a beginner, and phrased so a stronger answer can still show more depth. Not a scenario, not a trick, not multi-part.`;
+  if (l <= 4)
+    return `a level ${c} question: a straightforward applied question one step up from the basics, expected of a junior practitioner. Build on the 101 fundamentals, do not repeat them.`;
+  if (l <= 6)
+    return `a level ${c} question: a practical scenario requiring solid mid-level understanding, a clear step above the junior level.`;
+  if (l <= 8)
+    return `a level ${c} question: a deep design or trade-off question expected of a senior engineer, well above mid-level.`;
+  return `a level ${c} question: an expert-level problem probing edge cases, failure modes, or architecture at scale.`;
 }
 
 // The three-tier depth label for the headline score, matching the depth matrix:

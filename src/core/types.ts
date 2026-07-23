@@ -46,8 +46,9 @@ export interface Grade {
   degenerate: boolean; // empty / gibberish / too-short answer flagged by code
 }
 
-// What the engine decides to do next. `discovery` marks a broad calibration
-// opener; `ceilingProbe` marks a deliberate probe one level above the estimate.
+// What the engine decides to do next. `discovery` marks the single warm-up (the
+// first written question of the whole session); `ceilingProbe` marks a deliberate
+// probe one level above the estimate.
 export type EngineDecision =
   | {
       kind: "ask";
@@ -59,6 +60,10 @@ export type EngineDecision =
       // AI); "text" is a free-text depth probe graded by the AI. Deterministic:
       // the engine, not a model, decides the format.
       format: "mcq" | "text";
+      // When opening a FRESH topic mid-session, carry the candidate's running
+      // ability into it so it continues at their level instead of resetting to a
+      // level-2 warm-up. The orchestrator seeds the new topic's theta with this.
+      seedTheta?: number;
     }
   | { kind: "done" };
 

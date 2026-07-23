@@ -7,10 +7,10 @@ import {
   INITIAL_SIGMA,
   MAX_QUESTIONS_PER_TOPIC,
   MIN_QUESTIONS_PER_TOPIC,
-  NEUTRAL_START_THETA,
   NOISE,
   SIGMA_FLOOR,
   SIGMA_THRESHOLD,
+  START_THETA,
   STRONG_SCORE,
   THETA_MAX,
   THETA_MIN,
@@ -18,13 +18,15 @@ import {
 import { clamp, clampLevel } from "./ladder";
 import type { EngineDecision, Grade, TopicBlueprint, TopicState } from "./types";
 
-// Build the starting state for a topic. The running estimate starts neutral;
-// startLevel is stored separately and only steers the first question.
+// Build the starting state for a topic. The running estimate starts LOW, at the
+// 101 opener level, and climbs only on evidence, so the difficulty is an organized
+// ladder up from the bottom. startLevel is retained on the state but no longer
+// steers the opener (everyone starts at 101 for a fair, organized climb).
 export function initTopicState(bp: TopicBlueprint): TopicState {
   return {
     name: bp.name,
     importance: bp.importance,
-    theta: NEUTRAL_START_THETA,
+    theta: START_THETA,
     sigma: INITIAL_SIGMA,
     startLevel: clamp(bp.startLevel, THETA_MIN, THETA_MAX),
     questionsAsked: 0,
@@ -87,62 +89,120 @@ export function isTopicConverged(topic: TopicState): boolean {
   return topic.sigma < SIGMA_THRESHOLD;
 }
 
-// Difficulty for the next question in a topic. The FIRST question of every topic
-// is a broad discovery question (calibration), regardless of the persona prior.
-// After that it tracks the live estimate, with a ceiling probe one level up after
-// a run of strong answers. A deep discovery answer moves the estimate up sharply,
-// so the second question fast-forwards to a hard one on its own.
+// Difficulty for the next question in a topic that is already UNDERWAY
+// (answeredCount > 0). The estimate started at the candidate's running ability and
+// climbs or drops with each answer, so this is a smooth staircase, never a reset:
+// a wrong answer lowers the level and continues, a right one nudges up. A ceiling
+// probe fires one level up after a run of strong answers to find the top. All fast
+// MCQ (depth was already read at the single warm-up).
 export function nextDifficulty(topic: TopicState): {
   difficulty: number;
   ceilingProbe: boolean;
-  discovery: boolean;
   format: "mcq" | "text";
 } {
-  // Openers and the normal climb are fast MCQ. Only the ceiling probe (fired after
-  // a run of strong answers) becomes a free-text depth question, so real depth is
-  // confirmed with AI grading exactly where it matters and nowhere else.
-  if (topic.answeredCount === 0) {
-    return { difficulty: DISCOVERY_LEVEL, ceilingProbe: false, discovery: true, format: "mcq" };
-  }
   const base = clampLevel(topic.theta);
   if (topic.consecutiveStrong >= CEILING_PROBE_AFTER) {
-    return {
-      difficulty: clamp(base + 1, THETA_MIN, THETA_MAX),
-      ceilingProbe: true,
-      discovery: false,
-      format: "text",
-    };
+    return { difficulty: clamp(base + 1, THETA_MIN, THETA_MAX), ceilingProbe: true, format: "mcq" };
   }
-  return { difficulty: base, ceilingProbe: false, discovery: false, format: "mcq" };
+  return { difficulty: base, ceilingProbe: false, format: "mcq" };
 }
 
-// Pick the next topic to probe: the one we know least about (highest sigma),
-// tie-broken by importance (spend questions where they matter most).
+// The candidate's ability so far, averaged over topics that have been assessed. A
+// fresh topic opens HERE (continuing at their level) instead of resetting to the
+// warm-up floor. Falls back to the start level before anything is assessed.
+export function runningAbility(topics: TopicState[]): number {
+  const assessed = topics.filter((t) => t.answeredCount > 0);
+  if (assessed.length === 0) return START_THETA;
+  return assessed.reduce((sum, t) => sum + t.theta, 0) / assessed.length;
+}
+
+// Pick the next topic to ask. The fixed question budget is SPREAD across every
+// topic so all areas get covered (the user must see strengths and weaknesses in
+// each), instead of one topic hogging questions until it settles. Priority:
+//   1. Continue a topic underway that is not settled AND still under its fair share.
+//   2. Open the next unstarted topic, most important first.
+//   3. All topics covered: spend the leftover questions on the least-covered topic,
+//      tie-broken by highest uncertainty.
+// Always returns a valid index while there are topics, so the ONLY thing that ends
+// a session is the fixed question count.
 export function selectTopicIndex(topics: TopicState[]): number {
-  let best = -1;
+  if (topics.length === 0) return -1;
+
+  // A topic's fair share of the budget, so every topic is reached: e.g. 25
+  // questions over 7 topics is ~3 each before moving on (leftovers refine later).
+  const softTarget = Math.max(
+    MIN_QUESTIONS_PER_TOPIC,
+    Math.floor(GLOBAL_MAX_QUESTIONS / topics.length),
+  );
+
+  let inProgress = -1;
   for (let i = 0; i < topics.length; i++) {
     const t = topics[i];
-    if (t.converged) continue;
-    if (best === -1) {
-      best = i;
-      continue;
+    if (!t.converged && t.answeredCount > 0 && t.answeredCount < softTarget) {
+      if (inProgress === -1 || t.sigma > topics[inProgress].sigma) inProgress = i;
     }
+  }
+  if (inProgress !== -1) return inProgress;
+
+  let unstarted = -1;
+  for (let i = 0; i < topics.length; i++) {
+    if (topics[i].answeredCount === 0) {
+      if (unstarted === -1 || topics[i].importance > topics[unstarted].importance) unstarted = i;
+    }
+  }
+  if (unstarted !== -1) return unstarted;
+
+  // Every topic covered: spend the remaining questions on the least-covered topic
+  // (balance), then highest uncertainty.
+  let best = 0;
+  for (let i = 1; i < topics.length; i++) {
+    const t = topics[i];
     const b = topics[best];
-    if (t.sigma > b.sigma || (t.sigma === b.sigma && t.importance > b.importance)) {
+    if (t.answeredCount < b.answeredCount || (t.answeredCount === b.answeredCount && t.sigma > b.sigma)) {
       best = i;
     }
   }
   return best;
 }
 
-// The single deterministic decision function. Given current topic states and how
-// many questions have been answered overall, decide whether to ask (and what) or
-// stop. Note: no gameable "senior ceiling" early stop; sessions end on full
-// convergence or the global cap.
+// The single deterministic decision function. The session ALWAYS runs exactly
+// GLOBAL_MAX_QUESTIONS questions (a full assessment), then reports; it never stops
+// early on convergence. Only the very first question is a written warm-up; every
+// later topic continues at the running ability (carried via seedTheta), never
+// resetting to an easy warm-up.
 export function decide(topics: TopicState[], totalAnswered: number): EngineDecision {
   if (totalAnswered >= GLOBAL_MAX_QUESTIONS) return { kind: "done" };
   const topicIndex = selectTopicIndex(topics);
   if (topicIndex < 0) return { kind: "done" };
-  const { difficulty, ceilingProbe, discovery, format } = nextDifficulty(topics[topicIndex]);
-  return { kind: "ask", topicIndex, difficulty, ceilingProbe, discovery, format };
+  const topic = topics[topicIndex];
+
+  if (topic.answeredCount === 0) {
+    if (totalAnswered === 0) {
+      // The one and only warm-up: a written 101 opener that reads the starting
+      // depth so the whole assessment begins at the candidate's real level.
+      return {
+        kind: "ask",
+        topicIndex,
+        difficulty: DISCOVERY_LEVEL,
+        ceilingProbe: false,
+        discovery: true,
+        format: "text",
+      };
+    }
+    // Every later topic CONTINUES at the running ability (no warm-up reset), as a
+    // fast MCQ. seedTheta carries that level into the fresh topic.
+    const seed = runningAbility(topics);
+    return {
+      kind: "ask",
+      topicIndex,
+      difficulty: clampLevel(seed),
+      ceilingProbe: false,
+      discovery: false,
+      format: "mcq",
+      seedTheta: seed,
+    };
+  }
+
+  const { difficulty, ceilingProbe, format } = nextDifficulty(topic);
+  return { kind: "ask", topicIndex, difficulty, ceilingProbe, discovery: false, format };
 }

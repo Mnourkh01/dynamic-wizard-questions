@@ -7,6 +7,15 @@ export interface AgentTrace {
   agent: string;
   model: string;
   costUsd: number;
+  // Token counts for this call, so Langfuse shows tokens + cost per generation and
+  // a session totals up without any external price table. Cache fields are kept
+  // separate from input so cache reuse does not read as fresh input work.
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    cacheReadTokens: number;
+    cacheCreationTokens: number;
+  };
   durationMs: number;
   sessionId: string;
   input: string;
@@ -46,6 +55,15 @@ export function traceAgent(trace: AgentTrace): void {
       model: trace.model,
       input: trace.input,
       output: trace.output,
+      // usageDetails renders per-generation token counts; costDetails.total shows
+      // the dollar cost. Langfuse sums the non-total usage keys for the token total.
+      usageDetails: {
+        input: trace.usage.inputTokens,
+        output: trace.usage.outputTokens,
+        cache_read_input_tokens: trace.usage.cacheReadTokens,
+        cache_creation_input_tokens: trace.usage.cacheCreationTokens,
+      },
+      costDetails: { total: trace.costUsd },
       metadata: { costUsd: trace.costUsd, durationMs: trace.durationMs },
     });
   } catch {

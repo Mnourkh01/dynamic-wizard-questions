@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { startSession } from "@/orchestrator/session";
+import { buildSessionBank, startSession } from "@/orchestrator/session";
 
 // Node runtime: the orchestrator spawns the `claude` CLI. force-dynamic so the
 // route always runs; maxDuration is a hint for hosts (local dev has no limit).
@@ -10,6 +10,8 @@ export const maxDuration = 300;
 
 const BodySchema = z.object({
   role: z.string().min(2).max(200),
+  specialization: z.string().max(200).optional(),
+  candidateName: z.string().max(120).optional(),
   persona: z
     .object({
       background: z.string().max(500).optional(),
@@ -40,6 +42,11 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.reason }, { status: 422 });
     }
+    // Build the MCQ bank AFTER the response flushes, so Begin stays fast on a live
+    // (custom/specialized) role. after() keeps this work alive past the response,
+    // which a bare fire-and-forget promise in a route handler does not. Idempotent:
+    // a no-op for the pre-seeded template path (bank already populated).
+    after(() => buildSessionBank(result.sessionId));
     return NextResponse.json(result);
   } catch (err) {
     console.error("[api/sessions] startSession failed:", err);

@@ -24,7 +24,7 @@ export async function runGrader(input: {
   answer: string;
   language: Language;
 }): Promise<{ data: GradeOutput; costUsd: number }> {
-  const cfg = AGENTS.grader;
+  const cfg = AGENTS.answerGrader;
   const rubric = input.rubricPoints.map((p, i) => `${i + 1}. ${p}`).join("\n");
 
   const user = [
@@ -37,7 +37,7 @@ export async function runGrader(input: {
   ].join("\n\n");
 
   const res = await runAgent({
-    agent: "grader",
+    agent: "answer-grader",
     model: cfg.model,
     system: SYSTEM,
     user,

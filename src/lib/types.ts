@@ -26,7 +26,14 @@ export interface PublicGrade {
 }
 
 export interface SessionReport extends FinalScore {
+  // Context shown on the report header. candidateName + specialization are optional.
+  candidateName?: string;
+  role: string;
+  specialization?: string;
+  language: "en" | "ar";
+  verdict: string;
   summary: string;
+  weakPoints: { area: string; issue: string }[];
   perTopic: { name: string; strengths: string[]; gaps: string[] }[];
   learningPath: string[];
 }

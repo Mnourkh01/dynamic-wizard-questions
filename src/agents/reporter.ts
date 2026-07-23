@@ -8,15 +8,21 @@ const SYSTEM = [
   "You synthesize a technical skill self-assessment into an honest, useful report.",
   "Rules:",
   "- This is an unproctored SELF-assessment. Be honest and specific, not flattering.",
+  "- verdict: one or two blunt, plain sentences. State the overall level reached and the single biggest thing holding the person back. No jargon, no hedging.",
+  "- summary: a short, plain overview anyone can follow. Everyday words, short sentences, no filler and no buzzwords.",
+  "- weakPoints: the main weaknesses, MOST IMPORTANT FIRST, each as an area plus the concrete issue. This is the part the reader most needs, so make the gaps obvious.",
   "- For each topic give concrete strengths and gaps grounded in the results provided.",
   "- learningPath is an ordered list of concrete next steps, hardest gaps first.",
   "- Do not invent results beyond what the data shows.",
+  "- If a specialization is given, keep the whole report about that stack/focus, not the generic role.",
   NO_DASH_RULE,
   DATA_NOT_INSTRUCTIONS,
 ].join("\n");
 
 export async function runReporter(input: {
   role: string;
+  specialization?: string;
+  candidateName?: string;
   language: Language;
   total: number;
   confidenceInterval: number;
@@ -24,7 +30,7 @@ export async function runReporter(input: {
   topics: { name: string; theta: number; points: number; label: string }[];
   highlights: { topic: string; question: string; score: number; missing: string[] }[];
 }): Promise<{ data: ReportOutput; costUsd: number }> {
-  const cfg = AGENTS.reporter;
+  const cfg = AGENTS.reportWriter;
 
   const topicLines = input.topics
     .map((t) => `- ${t.name}: level ${t.theta.toFixed(1)} (${t.label}), ${t.points} of 1000 points`)
@@ -40,13 +46,15 @@ export async function runReporter(input: {
   const user = [
     `Write the assessment report. Overall: ${input.total} of 1000 (plus or minus ${input.confidenceInterval}), level ${input.overallLabel}.`,
     tag("role", input.role),
+    tag("specialization", input.specialization?.trim() || "none provided"),
+    tag("candidateName", input.candidateName?.trim() || "not provided"),
     tag("topicResults", topicLines),
     tag("answerHighlights", highlightLines),
     languageLine(input.language),
   ].join("\n\n");
 
   const res = await runAgent({
-    agent: "reporter",
+    agent: "report-writer",
     model: cfg.model,
     system: SYSTEM,
     user,

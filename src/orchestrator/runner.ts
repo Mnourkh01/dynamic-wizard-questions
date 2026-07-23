@@ -1,11 +1,17 @@
 import "dotenv/config";
 import { createInterface } from "node:readline/promises";
 import { z } from "zod";
-import { costSoFarUsd, resetCostUsd, runAgent } from "@/agents/client";
+import { costBreakdown, costSoFarUsd, resetCostUsd, runAgent } from "@/agents/client";
 import { prisma } from "@/db/client";
 import type { Language, Persona } from "@/core/types";
 import { shutdownObservability } from "@/observability/langfuse";
-import { peekMcqAnswer, startSession, submitAnswer, type QuestionPayload } from "./session";
+import {
+  buildSessionBank,
+  peekMcqAnswer,
+  startSession,
+  submitAnswer,
+  type QuestionPayload,
+} from "./session";
 
 // Phase 1 CLI harness. Drives a full assessment headless, before any UI exists.
 //   npm run assess -- --role "Senior Android Engineer"
@@ -14,6 +20,8 @@ import { peekMcqAnswer, startSession, submitAnswer, type QuestionPayload } from 
 
 interface Args {
   role: string;
+  specialization?: string;
+  candidateName?: string;
   persona?: Persona;
   language: Language;
   auto?: number; // simulate a candidate at this level (1-10)
@@ -37,7 +45,14 @@ function parseArgs(argv: string[]): Args {
       : undefined;
   const auto = get("--auto");
   const language = (get("--language") as Language) ?? "en";
-  return { role, persona, language, auto: auto ? Number(auto) : undefined };
+  return {
+    role,
+    specialization: get("--specialization"),
+    candidateName: get("--name"),
+    persona,
+    language,
+    auto: auto ? Number(auto) : undefined,
+  };
 }
 
 const CandidateSchema = z.object({ answer: z.string() });
@@ -51,7 +66,7 @@ async function autoAnswer(
   language: Language,
 ): Promise<string> {
   const res = await runAgent({
-    agent: "auto-candidate",
+    agent: "sim-candidate",
     model: "sonnet",
     system: [
       "You simulate a job candidate answering a skill-assessment question at a SPECIFIC level.",
@@ -66,7 +81,9 @@ async function autoAnswer(
       language === "ar" ? "Answer in Arabic." : "Answer in English.",
     ].join("\n\n"),
     schema: CandidateSchema,
-    maxOutputTokens: 1200,
+    // Roomy: a simulated senior answer to a written opener can be long, and the
+    // whole simulation aborts if the candidate overflows its own output cap.
+    maxOutputTokens: 3000,
     maxBudgetUsd: 0.3,
   });
   return res.data.answer;
@@ -113,6 +130,35 @@ async function getAnswer(
   return (await rl!.question("\nYour answer: ")).trim();
 }
 
+// Per-agent token + cost breakdown for the run, so you can see where a session
+// spends (which agent, how many tokens) without opening Langfuse. The "in" column
+// is every input token the model saw, including cache reads/creation, so a heavily
+// cached call does not misleadingly read as ~0 input.
+function printSpend(): void {
+  const rows = costBreakdown();
+  if (rows.length === 0) return;
+  const seenIn = (r: (typeof rows)[number]) =>
+    r.inputTokens + r.cacheReadTokens + r.cacheCreationTokens;
+  let totalIn = 0;
+  let totalOut = 0;
+  for (const r of rows) {
+    totalIn += seenIn(r);
+    totalOut += r.outputTokens;
+  }
+  console.log("\n──────── SPEND (per agent) ────────");
+  console.log(
+    `${"agent".padEnd(18)}${"calls".padStart(6)}${"in".padStart(9)}${"out".padStart(9)}${"cost".padStart(10)}`,
+  );
+  for (const r of rows) {
+    console.log(
+      `${r.agent.padEnd(18)}${String(r.calls).padStart(6)}${String(seenIn(r)).padStart(9)}${String(r.outputTokens).padStart(9)}${("$" + r.costUsd.toFixed(4)).padStart(10)}`,
+    );
+  }
+  console.log(
+    `${"TOTAL".padEnd(18)}${"".padStart(6)}${String(totalIn).padStart(9)}${String(totalOut).padStart(9)}${("$" + costSoFarUsd().toFixed(4)).padStart(10)}`,
+  );
+}
+
 async function main(): Promise<void> {
   resetCostUsd();
   const args = parseArgs(process.argv.slice(2));
@@ -121,6 +167,8 @@ async function main(): Promise<void> {
   console.log(`\nStarting assessment for: ${args.role}`);
   const start = await startSession({
     role: args.role,
+    specialization: args.specialization,
+    candidateName: args.candidateName,
     persona: args.persona,
     language: args.language,
   });
@@ -128,6 +176,11 @@ async function main(): Promise<void> {
     console.error(`Could not start: ${start.reason}`);
     process.exit(1);
   }
+
+  // Build the MCQ bank in the background (a no-op for pre-seeded roles). The CLI
+  // process stays alive through the answer loop, so it finishes without blocking
+  // the first question, mirroring the web app's after() scheduling.
+  void buildSessionBank(start.sessionId);
 
   const rl =
     args.auto === undefined
@@ -158,7 +211,13 @@ async function main(): Promise<void> {
       for (const t of r.topics) {
         console.log(`  ${t.points.toString().padStart(4)} / 1000  ${t.name}  (level ${t.theta.toFixed(1)}, ${t.label})`);
       }
-      console.log(`\nSummary: ${r.summary}`);
+      if (r.candidateName) console.log(`For: ${r.candidateName}`);
+      console.log(`\nVerdict: ${r.verdict}`);
+      console.log(`Summary: ${r.summary}`);
+      if (r.weakPoints.length > 0) {
+        console.log("Weak points:");
+        r.weakPoints.forEach((w) => console.log(`  - ${w.area}: ${w.issue}`));
+      }
       console.log("Learning path:");
       r.learningPath.forEach((s, i) => console.log(`  ${i + 1}. ${s}`));
       break;
@@ -170,6 +229,7 @@ async function main(): Promise<void> {
 
   rl?.close();
   const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+  printSpend();
   console.log(`\nSession id: ${start.sessionId}`);
   console.log(`Cost: $${costSoFarUsd().toFixed(4)} · Time: ${secs}s`);
   await shutdown();

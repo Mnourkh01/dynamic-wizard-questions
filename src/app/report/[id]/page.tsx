@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DepthField } from "@/components/DepthField";
 import { ResultPanel } from "@/components/ResultPanel";
-import { UI } from "@/lib/i18n";
+import { dirFor, UI, type UILang } from "@/lib/i18n";
 import { getSessionReport } from "@/orchestrator/session";
 
 export const runtime = "nodejs";
@@ -16,12 +16,15 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const report = await getSessionReport(id);
   if (!report) notFound();
 
-  const t = UI.en;
+  // Render the permalink in the language the session was taken in (older reports
+  // predate the stored language and fall back to English).
+  const lang: UILang = report.language === "ar" ? "ar" : "en";
+  const t = UI[lang];
 
   return (
     <>
       <DepthField level={report.total / 100} active={false} />
-      <main className="mx-auto flex min-h-dvh max-w-4xl flex-col px-5 py-6">
+      <main dir={dirFor(lang)} lang={lang} className="mx-auto flex min-h-dvh max-w-4xl flex-col px-5 py-6">
         <nav className="flex items-center justify-between">
           <span style={{ fontFamily: "var(--font-display)", color: "var(--text-hi)" }} className="text-lg">
             {t.appName}

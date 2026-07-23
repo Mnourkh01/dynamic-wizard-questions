@@ -34,24 +34,28 @@ const BANK_SYSTEM = [
 
 export async function runBankBuilder(input: {
   role: string;
+  specialization?: string;
   topics: string[];
   language: Language;
   levels?: number[];
 }): Promise<{ data: BankBuilderOutput; costUsd: number }> {
-  const cfg = AGENTS.bankBuilder;
+  const cfg = AGENTS.mcqWriter;
   const levels = input.levels ?? BANK_LEVELS;
   const topicList = input.topics.map((name, i) => `${i + 1}. ${name}`).join("\n");
+  const focusText = input.specialization?.trim() || "none provided";
 
   const user = [
     "Write the multiple-choice question bank for this assessment.",
     `For EACH topic below, write exactly ${levels.length} MCQs, one at each of these levels (out of 10): ${levels.join(", ")}.`,
+    "If a specialization is given, keep every question inside that stack/focus, not the generic role.",
     tag("role", input.role),
+    tag("specialization", focusText),
     tag("topics", topicList),
     languageLine(input.language),
   ].join("\n\n");
 
   const res = await runAgent({
-    agent: "bank-builder",
+    agent: "mcq-writer",
     model: cfg.model,
     system: BANK_SYSTEM,
     user,
@@ -79,7 +83,7 @@ export async function runMcqQuestion(input: {
   language: Language;
   alreadyAsked: string[];
 }): Promise<{ data: Mcq; costUsd: number }> {
-  const cfg = AGENTS.question;
+  const cfg = AGENTS.questionWriter;
   const asked =
     input.alreadyAsked.length > 0 ? input.alreadyAsked.join("\n---\n") : "none yet";
   const user = [
@@ -91,7 +95,7 @@ export async function runMcqQuestion(input: {
   ].join("\n\n");
 
   const res = await runAgent({
-    agent: "mcq-question",
+    agent: "mcq-writer-single",
     model: cfg.model,
     system: SINGLE_SYSTEM,
     user,
