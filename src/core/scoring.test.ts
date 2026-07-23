@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { computeFinalScore, normalizeWeightsTo1000 } from "./scoring";
+import { computeFinalScore, normalizeImportanceTo1000 } from "./scoring";
 import type { TopicState } from "./types";
 
-function topic(name: string, weight: number, theta: number, sigma = 0.5): TopicState {
+function topic(name: string, importance: number, theta: number, sigma = 0.5): TopicState {
   return {
     name,
-    weight,
+    importance,
     theta,
     sigma,
-    firstPickPrior: 5,
+    startLevel: 5,
     questionsAsked: 3,
     answeredCount: 3,
     consecutiveStrong: 0,
@@ -17,7 +17,7 @@ function topic(name: string, weight: number, theta: number, sigma = 0.5): TopicS
   };
 }
 
-describe("normalizeWeightsTo1000", () => {
+describe("normalizeImportanceTo1000", () => {
   it("always sums to exactly 1000", () => {
     const cases = [
       [1, 1, 1],
@@ -28,35 +28,35 @@ describe("normalizeWeightsTo1000", () => {
       [7, 7, 7, 7, 7, 7],
     ];
     for (const c of cases) {
-      const out = normalizeWeightsTo1000(c);
+      const out = normalizeImportanceTo1000(c);
       expect(out.reduce((a, b) => a + b, 0)).toBe(1000);
     }
   });
 
   it("keeps proportions and hands remainders to the largest fractions", () => {
     // three equal weights => 334/333/333 in some order summing to 1000
-    const out = normalizeWeightsTo1000([1, 1, 1]);
+    const out = normalizeImportanceTo1000([1, 1, 1]);
     expect(out.reduce((a, b) => a + b, 0)).toBe(1000);
     expect(Math.max(...out) - Math.min(...out)).toBeLessThanOrEqual(1);
   });
 
   it("gives a single topic all 1000", () => {
-    expect(normalizeWeightsTo1000([42])).toEqual([1000]);
+    expect(normalizeImportanceTo1000([42])).toEqual([1000]);
   });
 
   it("handles all-zero / invalid input by spreading evenly to 1000", () => {
-    const out = normalizeWeightsTo1000([0, 0, 0, 0]);
+    const out = normalizeImportanceTo1000([0, 0, 0, 0]);
     expect(out.reduce((a, b) => a + b, 0)).toBe(1000);
     expect(out.every((v) => v === 250)).toBe(true);
   });
 
   it("returns empty for empty input", () => {
-    expect(normalizeWeightsTo1000([])).toEqual([]);
+    expect(normalizeImportanceTo1000([])).toEqual([]);
   });
 });
 
 describe("computeFinalScore", () => {
-  it("computes per-topic points as round(weight * theta/10) and totals them", () => {
+  it("computes per-topic points as round(importance * theta/10) and totals them", () => {
     const topics = [topic("A", 500, 8), topic("B", 300, 5), topic("C", 200, 10)];
     const score = computeFinalScore(topics);
     // 500*0.8=400, 300*0.5=150, 200*1.0=200 => 750

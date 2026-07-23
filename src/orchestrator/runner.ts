@@ -3,7 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { z } from "zod";
 import { costSoFarUsd, resetCostUsd, runAgent } from "@/agents/client";
 import type { Language, Persona } from "@/core/types";
-import { startSession, submitAnswer, type QuestionPayload } from "./session";
+import { peekMcqAnswer, startSession, submitAnswer, type QuestionPayload } from "./session";
 
 // Phase 1 CLI harness. Drives a full assessment headless, before any UI exists.
 //   npm run assess -- --role "Senior Android Engineer"
@@ -72,8 +72,43 @@ async function autoAnswer(
 
 function printQuestion(q: QuestionPayload): void {
   const probe = q.ceilingProbe ? "  [ceiling probe]" : "";
-  console.log(`\n─ Q${q.order} · ${q.topicName} · level ${q.difficulty}${probe}`);
+  const kind = q.format === "mcq" ? " (MCQ)" : "";
+  console.log(`\n─ Q${q.order} · ${q.topicName} · level ${q.difficulty}${kind}${probe}`);
   console.log(q.text);
+  if (q.format === "mcq" && q.options) {
+    q.options.forEach((o, i) => console.log(`   ${i}) ${o}`));
+  }
+}
+
+// Produce the answer for the current question. MCQ answers are a 0-based option
+// index (as a string); text answers are prose. In auto mode an MCQ is answered
+// by peeking the correct index (harness only): a candidate of the target level
+// answers correctly when the question is at or below their level, else guesses.
+async function getAnswer(
+  args: Args,
+  current: QuestionPayload,
+  rl: ReturnType<typeof createInterface> | null,
+): Promise<string> {
+  if (current.format === "mcq") {
+    if (args.auto !== undefined) {
+      const peek = await peekMcqAnswer(current.questionId);
+      if (!peek) return "0";
+      const choice =
+        args.auto >= current.difficulty
+          ? peek.correctIndex
+          : (peek.correctIndex + 1) % peek.optionCount;
+      console.log(`\n[auto L${args.auto}] chose option ${choice}`);
+      return String(choice);
+    }
+    return (await rl!.question("\nYour choice (number): ")).trim();
+  }
+
+  if (args.auto !== undefined) {
+    const a = await autoAnswer(args.role, current, args.auto, args.language);
+    console.log(`\n[auto L${args.auto}] ${a.slice(0, 160)}${a.length > 160 ? "…" : ""}`);
+    return a;
+  }
+  return (await rl!.question("\nYour answer: ")).trim();
 }
 
 async function main(): Promise<void> {
@@ -102,14 +137,7 @@ async function main(): Promise<void> {
 
   // Drive the loop until the engine reports done.
   for (;;) {
-    const answer =
-      args.auto !== undefined
-        ? await autoAnswer(args.role, current, args.auto, args.language)
-        : (await rl!.question("\nYour answer: ")).trim();
-
-    if (args.auto !== undefined) {
-      console.log(`\n[auto L${args.auto}] ${answer.slice(0, 160)}${answer.length > 160 ? "…" : ""}`);
-    }
+    const answer = await getAnswer(args, current, rl);
 
     const result = await submitAnswer({
       sessionId: start.sessionId,

@@ -8,12 +8,12 @@ export interface Persona {
   years?: number;
 }
 
-// A topic as proposed by the Blueprint agent, after code has normalized weights
-// to sum to exactly 1000 (never trust the LLM to do the arithmetic).
+// A topic as proposed by the Blueprint agent. `importance` is normalized in code
+// to sum to exactly 1000 across the session (never trust the LLM to do the math).
 export interface TopicBlueprint {
   name: string;
-  weight: number; // integer; all weights in a session sum to 1000
-  prior: number; // starting ability 1..10, persona-informed, used ONLY for the first question pick
+  importance: number; // this topic's share of the 1000-point total
+  startLevel: number; // starting level guess 1..10, persona-informed, used ONLY to pick the first question
 }
 
 export interface Blueprint {
@@ -24,15 +24,15 @@ export interface Blueprint {
 // The deterministic ability state the engine carries per topic.
 export interface TopicState {
   name: string;
-  weight: number;
-  theta: number; // ability estimate, 1..10 (starts neutral, NOT at the prior)
+  importance: number; // this topic's share of the 1000-point total
+  theta: number; // live ability estimate, 1..10 (starts neutral, NOT at startLevel)
   sigma: number; // uncertainty (std dev)
-  firstPickPrior: number; // persona-informed 1..10, aims ONLY the first question
+  startLevel: number; // persona-informed 1..10, aims ONLY the first question
   questionsAsked: number;
   answeredCount: number; // graded observations
   consecutiveStrong: number; // streak feeding the ceiling probe
   converged: boolean;
-  points: number; // weight * theta/10, filled at scoring time
+  points: number; // importance * theta/10, filled at scoring time
 }
 
 // The normalized grade the engine consumes. Produced from the Grader agent's
@@ -55,16 +55,20 @@ export type EngineDecision =
       difficulty: number;
       ceilingProbe: boolean;
       discovery: boolean;
+      // How to ask it. "mcq" is served instantly from the pre-generated bank (no
+      // AI); "text" is a free-text depth probe graded by the AI. Deterministic:
+      // the engine, not a model, decides the format.
+      format: "mcq" | "text";
     }
   | { kind: "done" };
 
 // The scored result at the end of a session.
 export interface TopicScore {
   name: string;
-  weight: number;
+  importance: number;
   theta: number;
   sigma: number;
-  points: number; // contribution to the 1000, = round(weight * theta/10)
+  points: number; // contribution to the 1000, = round(importance * theta/10)
   label: string;
 }
 

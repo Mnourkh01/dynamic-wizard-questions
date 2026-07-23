@@ -21,10 +21,10 @@ import type { Grade, TopicBlueprint, TopicState } from "./types";
 function topic(overrides: Partial<TopicState> = {}): TopicState {
   return {
     name: "T",
-    weight: 100,
+    importance: 100,
     theta: NEUTRAL_START_THETA,
     sigma: INITIAL_SIGMA,
-    firstPickPrior: 5,
+    startLevel: 5,
     questionsAsked: 0,
     answeredCount: 0,
     consecutiveStrong: 0,
@@ -46,18 +46,18 @@ function grade(overrides: Partial<Grade> = {}): Grade {
 }
 
 describe("initTopicState", () => {
-  it("starts the running estimate neutral, stores the prior separately", () => {
-    const bp: TopicBlueprint = { name: "Concurrency", weight: 300, prior: 8 };
+  it("starts the running estimate neutral, stores the startLevel separately", () => {
+    const bp: TopicBlueprint = { name: "Concurrency", importance: 300, startLevel: 8 };
     const t = initTopicState(bp);
-    expect(t.theta).toBe(NEUTRAL_START_THETA); // NOT the prior
-    expect(t.firstPickPrior).toBe(8);
+    expect(t.theta).toBe(NEUTRAL_START_THETA); // NOT the startLevel
+    expect(t.startLevel).toBe(8);
     expect(t.sigma).toBe(INITIAL_SIGMA);
     expect(t.answeredCount).toBe(0);
   });
 
-  it("clamps an out-of-range prior", () => {
-    expect(initTopicState({ name: "x", weight: 1, prior: 99 }).firstPickPrior).toBe(10);
-    expect(initTopicState({ name: "x", weight: 1, prior: -5 }).firstPickPrior).toBe(1);
+  it("clamps an out-of-range startLevel", () => {
+    expect(initTopicState({ name: "x", importance: 1, startLevel: 99 }).startLevel).toBe(10);
+    expect(initTopicState({ name: "x", importance: 1, startLevel: -5 }).startLevel).toBe(1);
   });
 });
 
@@ -103,11 +103,21 @@ describe("applyGrade (Kalman-style update)", () => {
     expect(degen.consecutiveStrong).toBe(0);
   });
 
-  it("two strong graded answers converge a topic", () => {
+  it("keeps probing while the candidate is still acing below the ceiling", () => {
     let t = topic();
     t = applyGrade(t, grade({ score: 90, demonstratedLevel: 8, matchedCount: 4, missingCount: 1 }));
     t = applyGrade(t, grade({ score: 90, demonstratedLevel: 8, matchedCount: 4, missingCount: 1 }));
     expect(t.answeredCount).toBe(2);
+    expect(t.consecutiveStrong).toBe(2);
+    expect(t.converged).toBe(false); // still climbing to find the ceiling
+  });
+
+  it("converges once a strong streak breaks and the level is bracketed", () => {
+    let t = topic();
+    t = applyGrade(t, grade({ score: 90, demonstratedLevel: 8, matchedCount: 4, missingCount: 1 }));
+    t = applyGrade(t, grade({ score: 90, demonstratedLevel: 8, matchedCount: 4, missingCount: 1 }));
+    t = applyGrade(t, grade({ score: 30, demonstratedLevel: 4, matchedCount: 1, missingCount: 4 }));
+    expect(t.consecutiveStrong).toBe(0);
     expect(t.converged).toBe(true);
   });
 });
@@ -124,11 +134,12 @@ describe("isTopicConverged", () => {
 });
 
 describe("nextDifficulty", () => {
-  it("opens every topic with a broad discovery question, ignoring the prior", () => {
-    const d = nextDifficulty(topic({ answeredCount: 0, firstPickPrior: 8, theta: 5 }));
+  it("opens every topic with a broad discovery question, ignoring the startLevel", () => {
+    const d = nextDifficulty(topic({ answeredCount: 0, startLevel: 8, theta: 5 }));
     expect(d.difficulty).toBe(DISCOVERY_LEVEL);
     expect(d.discovery).toBe(true);
     expect(d.ceilingProbe).toBe(false);
+    expect(d.format).toBe("mcq");
   });
 
   it("tracks the live estimate after the first question (fast-forward)", () => {
@@ -136,23 +147,25 @@ describe("nextDifficulty", () => {
     expect(d.difficulty).toBe(6);
     expect(d.discovery).toBe(false);
     expect(d.ceilingProbe).toBe(false);
+    expect(d.format).toBe("mcq");
   });
 
   it("probes one level up after a run of strong answers", () => {
     const d = nextDifficulty(topic({ answeredCount: 2, theta: 6, consecutiveStrong: 2 }));
     expect(d.difficulty).toBe(7);
     expect(d.ceilingProbe).toBe(true);
+    expect(d.format).toBe("text");
   });
 });
 
 describe("selectTopicIndex", () => {
-  it("picks the highest-uncertainty topic, tie-broken by weight", () => {
+  it("picks the highest-uncertainty topic, tie-broken by importance", () => {
     const topics = [
-      topic({ name: "a", sigma: 0.8, weight: 100 }),
-      topic({ name: "b", sigma: 1.5, weight: 100 }),
-      topic({ name: "c", sigma: 1.5, weight: 300 }),
+      topic({ name: "a", sigma: 0.8, importance: 100 }),
+      topic({ name: "b", sigma: 1.5, importance: 100 }),
+      topic({ name: "c", sigma: 1.5, importance: 300 }),
     ];
-    expect(selectTopicIndex(topics)).toBe(2); // same sigma as b, higher weight
+    expect(selectTopicIndex(topics)).toBe(2); // same sigma as b, higher importance
   });
 
   it("skips converged topics and returns -1 when all converged", () => {
@@ -171,13 +184,14 @@ describe("decide", () => {
   });
 
   it("opens with a discovery question on the selected topic", () => {
-    const d = decide([topic({ answeredCount: 0, firstPickPrior: 7 })], 0);
+    const d = decide([topic({ answeredCount: 0, startLevel: 7 })], 0);
     expect(d).toEqual({
       kind: "ask",
       topicIndex: 0,
       difficulty: DISCOVERY_LEVEL,
       ceilingProbe: false,
       discovery: true,
+      format: "mcq",
     });
   });
 });

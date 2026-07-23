@@ -7,17 +7,17 @@ import { z } from "zod";
 // --- Blueprint -------------------------------------------------------------
 export const BlueprintTopicSchema = z.object({
   name: z.string().min(1).describe("A specific, non-overlapping skill area for this role"),
-  weight: z
+  importance: z
     .number()
     .int()
     .min(1)
-    .describe("Relative importance as a positive integer; code normalizes these to sum 1000"),
-  prior: z
+    .describe("How much this topic counts toward the score, as a positive integer on any scale; code normalizes these to sum 1000"),
+  startLevel: z
     .number()
     .int()
     .min(1)
     .max(10)
-    .describe("Level 1-10 a person matching the persona would typically start at; aims the first question only"),
+    .describe("A starting level guess 1-10 for someone matching the persona; only aims the first question"),
 });
 
 export const BlueprintOutputSchema = z.object({
@@ -68,3 +68,32 @@ export const ReportOutputSchema = z.object({
   learningPath: z.array(z.string()).describe("Ordered, concrete next steps to improve"),
 });
 export type ReportOutput = z.infer<typeof ReportOutputSchema>;
+
+// --- MCQ (hybrid mode) ------------------------------------------------------
+// One multiple-choice question. correctIndex bounds are re-checked in code when
+// the question is stored (a refine is intentionally avoided so z.toJSONSchema
+// stays a plain object schema for the CLI validator).
+export const McqSchema = z.object({
+  level: z.number().int().min(1).max(10).describe("The level 1-10 this MCQ targets"),
+  stem: z.string().min(1).describe("The question text: one clear question"),
+  options: z
+    .array(z.string().min(1))
+    .min(3)
+    .max(5)
+    .describe("Answer options; EXACTLY ONE is correct, the rest are plausible distractors"),
+  correctIndex: z
+    .number()
+    .int()
+    .min(0)
+    .describe("0-based index of the correct option within options"),
+});
+export type Mcq = z.infer<typeof McqSchema>;
+
+export const BankTopicSchema = z.object({
+  name: z.string().min(1).describe("The topic name, matching a requested topic"),
+  questions: z.array(McqSchema).min(1).max(8).describe("MCQs for this topic across the requested levels"),
+});
+export const BankBuilderOutputSchema = z.object({
+  topics: z.array(BankTopicSchema).min(1).max(8),
+});
+export type BankBuilderOutput = z.infer<typeof BankBuilderOutputSchema>;

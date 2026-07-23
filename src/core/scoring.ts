@@ -1,10 +1,10 @@
 import { depthTier, levelLabel } from "./ladder";
 import type { FinalScore, TopicScore, TopicState } from "./types";
 
-// Normalize arbitrary positive weights to integers summing to EXACTLY 1000,
-// using the largest-remainder (Hamilton) method. Done in code, never by the LLM,
-// so the 1000-point split is always exact and reproducible.
-export function normalizeWeightsTo1000(raw: number[]): number[] {
+// Normalize arbitrary positive importance values to integers summing to EXACTLY
+// 1000, using the largest-remainder (Hamilton) method. Done in code, never by the
+// LLM, so the 1000-point split is always exact and reproducible.
+export function normalizeImportanceTo1000(raw: number[]): number[] {
   const n = raw.length;
   if (n === 0) return [];
 
@@ -35,24 +35,24 @@ export function normalizeWeightsTo1000(raw: number[]): number[] {
 }
 
 // Turn final topic states into the 1000-point split. Per-topic points =
-// round(weight * theta/10); the headline is the sum of the shown points, so the
-// number the user sees always equals its parts.
+// round(importance * theta/10); the headline is the sum of the shown points, so
+// the number the user sees always equals its parts.
 export function computeFinalScore(topics: TopicState[]): FinalScore {
   const scored: TopicScore[] = topics.map((t) => ({
     name: t.name,
-    weight: t.weight,
+    importance: t.importance,
     theta: t.theta,
     sigma: t.sigma,
-    points: Math.round(t.weight * (t.theta / 10)),
+    points: Math.round(t.importance * (t.theta / 10)),
     label: levelLabel(t.theta),
   }));
 
   const total = scored.reduce((sum, t) => sum + t.points, 0);
 
-  // Confidence band: each topic contributes (weight/10)*sigma of point
+  // Confidence band: each topic contributes (importance/10)*sigma of point
   // uncertainty; combine independently (root-sum-square) for the headline band.
   const variance = topics.reduce((sum, t) => {
-    const sd = (t.weight / 10) * t.sigma;
+    const sd = (t.importance / 10) * t.sigma;
     return sum + sd * sd;
   }, 0);
   const confidenceInterval = Math.round(Math.sqrt(variance));

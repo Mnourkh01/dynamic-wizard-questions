@@ -19,14 +19,14 @@ import { clamp, clampLevel } from "./ladder";
 import type { EngineDecision, Grade, TopicBlueprint, TopicState } from "./types";
 
 // Build the starting state for a topic. The running estimate starts neutral;
-// the prior is stored separately and only steers the first question.
+// startLevel is stored separately and only steers the first question.
 export function initTopicState(bp: TopicBlueprint): TopicState {
   return {
     name: bp.name,
-    weight: bp.weight,
+    importance: bp.importance,
     theta: NEUTRAL_START_THETA,
     sigma: INITIAL_SIGMA,
-    firstPickPrior: clamp(bp.prior, THETA_MIN, THETA_MAX),
+    startLevel: clamp(bp.startLevel, THETA_MIN, THETA_MAX),
     questionsAsked: 0,
     answeredCount: 0,
     consecutiveStrong: 0,
@@ -75,8 +75,16 @@ export function applyGrade(topic: TopicState, grade: Grade): TopicState {
 export function isTopicConverged(topic: TopicState): boolean {
   // Hard per-topic cap always stops it.
   if (topic.answeredCount >= MAX_QUESTIONS_PER_TOPIC) return true;
-  // Otherwise it needs the minimum evidence AND low uncertainty.
-  return topic.answeredCount >= MIN_QUESTIONS_PER_TOPIC && topic.sigma < SIGMA_THRESHOLD;
+  // Needs the minimum evidence first.
+  if (topic.answeredCount < MIN_QUESTIONS_PER_TOPIC) return false;
+  // Do not stop while the candidate is still on a winning streak below the top
+  // band: their ceiling has not been found yet (this is what lets the MCQ
+  // staircase climb instead of converging on the first two easy items). Converge
+  // once the streak breaks (a miss brackets the level) or the estimate tops out.
+  if (topic.consecutiveStrong >= CEILING_PROBE_AFTER && topic.theta < THETA_MAX - 1) {
+    return false;
+  }
+  return topic.sigma < SIGMA_THRESHOLD;
 }
 
 // Difficulty for the next question in a topic. The FIRST question of every topic
@@ -88,9 +96,13 @@ export function nextDifficulty(topic: TopicState): {
   difficulty: number;
   ceilingProbe: boolean;
   discovery: boolean;
+  format: "mcq" | "text";
 } {
+  // Openers and the normal climb are fast MCQ. Only the ceiling probe (fired after
+  // a run of strong answers) becomes a free-text depth question, so real depth is
+  // confirmed with AI grading exactly where it matters and nowhere else.
   if (topic.answeredCount === 0) {
-    return { difficulty: DISCOVERY_LEVEL, ceilingProbe: false, discovery: true };
+    return { difficulty: DISCOVERY_LEVEL, ceilingProbe: false, discovery: true, format: "mcq" };
   }
   const base = clampLevel(topic.theta);
   if (topic.consecutiveStrong >= CEILING_PROBE_AFTER) {
@@ -98,13 +110,14 @@ export function nextDifficulty(topic: TopicState): {
       difficulty: clamp(base + 1, THETA_MIN, THETA_MAX),
       ceilingProbe: true,
       discovery: false,
+      format: "text",
     };
   }
-  return { difficulty: base, ceilingProbe: false, discovery: false };
+  return { difficulty: base, ceilingProbe: false, discovery: false, format: "mcq" };
 }
 
 // Pick the next topic to probe: the one we know least about (highest sigma),
-// tie-broken by weight (spend questions where they matter most).
+// tie-broken by importance (spend questions where they matter most).
 export function selectTopicIndex(topics: TopicState[]): number {
   let best = -1;
   for (let i = 0; i < topics.length; i++) {
@@ -115,7 +128,7 @@ export function selectTopicIndex(topics: TopicState[]): number {
       continue;
     }
     const b = topics[best];
-    if (t.sigma > b.sigma || (t.sigma === b.sigma && t.weight > b.weight)) {
+    if (t.sigma > b.sigma || (t.sigma === b.sigma && t.importance > b.importance)) {
       best = i;
     }
   }
@@ -130,6 +143,6 @@ export function decide(topics: TopicState[], totalAnswered: number): EngineDecis
   if (totalAnswered >= GLOBAL_MAX_QUESTIONS) return { kind: "done" };
   const topicIndex = selectTopicIndex(topics);
   if (topicIndex < 0) return { kind: "done" };
-  const { difficulty, ceilingProbe, discovery } = nextDifficulty(topics[topicIndex]);
-  return { kind: "ask", topicIndex, difficulty, ceilingProbe, discovery };
+  const { difficulty, ceilingProbe, discovery, format } = nextDifficulty(topics[topicIndex]);
+  return { kind: "ask", topicIndex, difficulty, ceilingProbe, discovery, format };
 }

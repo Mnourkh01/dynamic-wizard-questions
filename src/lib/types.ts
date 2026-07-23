@@ -11,7 +11,10 @@ export interface QuestionPayload {
   difficulty: number;
   ceilingProbe: boolean;
   discovery: boolean;
+  format: "mcq" | "text";
   text: string;
+  // Present for mcq only. The correct index is NEVER sent to the client.
+  options?: string[];
 }
 
 export interface PublicGrade {

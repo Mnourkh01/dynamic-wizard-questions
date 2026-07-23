@@ -24,9 +24,10 @@ model Session {
   startedAt  DateTime          @default(now())
   finishedAt DateTime?
 
-  topics    Topic[]
-  questions Question[]
-  snapshots AbilitySnapshot[]
+  topics        Topic[]
+  questions     Question[]
+  snapshots     AbilitySnapshot[]
+  bankQuestions BankQuestion[]
 }
 
 model Topic {
@@ -35,18 +36,19 @@ model Topic {
   session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   name             String
   order            Int // stable display order
-  weight           Int // normalized so all weights in a session sum to 1000
-  theta            Float // ability estimate, scale 1..10
+  importance       Int     @map("weight") // this topic's share of the 1000-point total
+  theta            Float // live ability estimate, scale 1..10
   sigma            Float // uncertainty (std dev of the estimate)
-  firstPickPrior   Float // persona-informed prior, aims only the first question
-  points           Int     @default(0) // weight * theta/10, filled at scoring
+  startLevel       Float   @map("firstPickPrior") // starting level guess 1..10, aims only the first question
+  points           Int     @default(0) // importance * theta/10, filled at scoring
   questionsAsked   Int     @default(0)
   answeredCount    Int     @default(0) // graded observations (drives resume + stops)
   consecutiveStrong Int    @default(0) // strong-answer streak for the ceiling probe
   converged        Boolean @default(false)
 
-  questions Question[]
-  snapshots AbilitySnapshot[]
+  questions     Question[]
+  snapshots     AbilitySnapshot[]
+  bankQuestions BankQuestion[]
 
   @@index([sessionId])
 }
@@ -62,6 +64,9 @@ model Question {
   text       String
   rubric     String // JSON: { points: string[], gold: string, maxScore: number, level: number }
   maxScore   Int      @default(100)
+  format       String  @default("text") // "text" | "mcq"
+  optionsJson  String? // JSON string[] of options, mcq only
+  correctIndex Int? // 0-based correct option, mcq only (never sent to the client)
   createdAt  DateTime @default(now())
 
   answer Answer?
@@ -108,4 +113,24 @@ model AbilitySnapshot {
   createdAt DateTime @default(now())
 
   @@index([sessionId])
+}
+
+// Pre-generated pool of multiple-choice questions, built in one batch at session
+// start so serving an MCQ round is pure DB work (zero AI on the hot path). A row
+// is popped (used=true) and copied into a Question when it is actually asked.
+model BankQuestion {
+  id           String   @id @default(cuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  topicId      String
+  topic        Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  level        Int // 1..10 band this MCQ targets
+  stem         String
+  optionsJson  String // JSON string[] of options
+  correctIndex Int // 0-based correct option
+  used         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([topicId])
 }

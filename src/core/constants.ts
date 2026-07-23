@@ -49,3 +49,9 @@ export const STRONG_SCORE = 75;
 // Below this raw score the answer is treated as failing the question (used only
 // to reset the consecutive-strong streak, not in the theta math).
 export const WEAK_SCORE = 40;
+
+// Hybrid mode: at most this many free-text, AI-graded depth probes per whole
+// session (the slow questions). Ceiling probes beyond this are served as harder
+// MCQ, so a strong candidate stays fast while depth is still confirmed a couple
+// of times where it matters most.
+export const MAX_TEXT_PROBES = 2;

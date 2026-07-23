@@ -32,6 +32,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [current, setCurrent] = useState<QuestionPayload | null>(null);
   const [answer, setAnswer] = useState("");
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [pulse, setPulse] = useState(false);
   const [report, setReport] = useState<SessionReport | null>(null);
   const [copied, setCopied] = useState(false);
@@ -89,6 +90,7 @@ export default function Home() {
       setSessionId(data.sessionId);
       setCurrent(data.question);
       setAnswer("");
+      setSelectedOption(null);
       setPhase("question");
     } catch {
       setError(t.errorGeneric);
@@ -99,13 +101,17 @@ export default function Home() {
 
   const submit = useCallback(async () => {
     if (!sessionId || !current || busy) return;
+    // MCQ answers are the 0-based selected option index; text answers are prose.
+    if (current.format === "mcq" && selectedOption === null) return;
+    const payloadAnswer =
+      current.format === "mcq" ? String(selectedOption) : answer;
     setBusy("grading");
     setError(null);
     try {
       const res = await fetch(`/api/sessions/${sessionId}/answer`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ questionId: current.questionId, answer }),
+        body: JSON.stringify({ questionId: current.questionId, answer: payloadAnswer }),
       });
       const data = (await res.json()) as AnswerResult & { error?: string };
       if (!res.ok || "error" in data) {
@@ -121,13 +127,14 @@ export default function Home() {
       } else {
         setCurrent(data.question);
         setAnswer("");
+        setSelectedOption(null);
       }
     } catch {
       setError(t.errorGeneric);
     } finally {
       setBusy(false);
     }
-  }, [sessionId, current, answer, busy, t]);
+  }, [sessionId, current, answer, selectedOption, busy, t]);
 
   const restart = useCallback(() => {
     setPhase("setup");
@@ -139,6 +146,7 @@ export default function Home() {
     setSessionId(null);
     setCurrent(null);
     setAnswer("");
+    setSelectedOption(null);
     setReport(null);
     setError(null);
   }, []);
@@ -339,24 +347,65 @@ export default function Home() {
                   </div>
 
                   <div className="mt-6">
-                    <AnswerField
-                      value={answer}
-                      onChange={setAnswer}
-                      onSubmit={submit}
-                      placeholder={t.answerPlaceholder}
-                      label={t.answerPlaceholder}
-                      disabled={busy !== false}
-                    />
+                    {current.format === "mcq" && current.options ? (
+                      <ul className="grid gap-2.5">
+                        {current.options.map((opt, i) => {
+                          const selected = selectedOption === i;
+                          return (
+                            <li key={i}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedOption(i)}
+                                disabled={busy !== false}
+                                aria-pressed={selected}
+                                className="flex w-full items-center gap-3 rounded-2xl px-5 py-4 text-start text-[15px] transition-colors disabled:opacity-60"
+                                style={{
+                                  border: `1px solid ${selected ? "var(--amber)" : "var(--glass-border)"}`,
+                                  background: selected ? "rgba(255,180,84,0.14)" : "rgba(3,10,16,0.4)",
+                                  color: selected ? "var(--text-hi)" : "var(--text-mid)",
+                                }}
+                              >
+                                <span
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs"
+                                  style={{
+                                    border: `1px solid ${selected ? "var(--amber)" : "var(--glass-border)"}`,
+                                    color: selected ? "var(--amber)" : "var(--text-low)",
+                                    fontFamily: "var(--font-mono)",
+                                  }}
+                                >
+                                  {String.fromCharCode(65 + i)}
+                                </span>
+                                <span className="min-w-0">{opt}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <AnswerField
+                        value={answer}
+                        onChange={setAnswer}
+                        onSubmit={submit}
+                        placeholder={t.answerPlaceholder}
+                        label={t.answerPlaceholder}
+                        disabled={busy !== false}
+                      />
+                    )}
                   </div>
 
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-xs" style={{ color: "var(--text-low)", fontFamily: "var(--font-mono)" }}>
-                      {t.submitHint}
+                      {current.format === "mcq" ? t.chooseHint : t.submitHint}
                     </span>
                     <button
                       type="button"
                       onClick={submit}
-                      disabled={busy !== false || answer.trim().length === 0}
+                      disabled={
+                        busy !== false ||
+                        (current.format === "mcq"
+                          ? selectedOption === null
+                          : answer.trim().length === 0)
+                      }
                       className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium transition-transform hover:scale-[1.02] disabled:opacity-60"
                       style={{ background: "var(--amber)", color: "#241300" }}
                     >

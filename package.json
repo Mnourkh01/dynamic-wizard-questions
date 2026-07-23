@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "assess": "tsx src/orchestrator/runner.ts",
     "validity": "tsx src/validity/check.ts",
+    "seed:roles": "tsx scripts/gen-role-banks.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "prisma generate",

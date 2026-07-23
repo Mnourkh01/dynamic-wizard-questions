@@ -23,6 +23,7 @@ export interface UIStrings {
   answerPlaceholder: string;
   submit: string;
   submitHint: string;
+  chooseHint: string;
   questionCounter: (n: number) => string;
   topicPrefix: string;
   levelWord: string;
@@ -62,6 +63,7 @@ export const UI: Record<UILang, UIStrings> = {
     answerPlaceholder: "Type your answer. Take your time.",
     submit: "Submit",
     submitHint: "Ctrl + Enter",
+    chooseHint: "Pick the best answer",
     questionCounter: (n) => `Question ${n}`,
     topicPrefix: "Probing",
     levelWord: "Level",
@@ -99,6 +101,7 @@ export const UI: Record<UILang, UIStrings> = {
     answerPlaceholder: "اكتب إجابتك. خد وقتك.",
     submit: "إرسال",
     submitHint: "Ctrl + Enter",
+    chooseHint: "اختر الإجابة الأنسب",
     questionCounter: (n) => `سؤال ${n}`,
     topicPrefix: "بيقيس",
     levelWord: "مستوى",
