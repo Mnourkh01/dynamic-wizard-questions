@@ -6,7 +6,7 @@ import { prisma } from "@/db/client";
 import type { Language, Persona } from "@/core/types";
 import { shutdownObservability } from "@/observability/langfuse";
 import {
-  buildSessionBank,
+  materializeSession,
   peekMcqAnswer,
   startSession,
   submitAnswer,
@@ -177,10 +177,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Build the MCQ bank in the background (a no-op for pre-seeded roles). The CLI
-  // process stays alive through the answer loop, so it finishes without blocking
-  // the first question, mirroring the web app's after() scheduling.
-  void buildSessionBank(start.sessionId);
+  // Build the real topics + MCQ bank in the background (a no-op for pre-seeded
+  // roles). The CLI process stays alive through the answer loop, so it finishes
+  // without blocking the first question, mirroring the web app's after() scheduling.
+  // submitAnswer also awaits ensureBlueprint as a safety net on the first submit.
+  void materializeSession(start.sessionId);
 
   const rl =
     args.auto === undefined

@@ -21,6 +21,7 @@ model Session {
   persona        String? // JSON: { background?, years? }
   language       String        @default("en") // "en" | "ar"
   status     String            @default("active") // active | done | abandoned
+  blueprintPending Boolean      @default(false) // live path: real topics still being built in the background
   finalScore Int? // 0..1000, set when done
   reportJson String? // full SessionReport JSON, persisted for the report permalink
   startedAt  DateTime          @default(now())

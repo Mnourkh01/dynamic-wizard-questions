@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { buildSessionBank, startSession } from "@/orchestrator/session";
+import { materializeSession, startSession } from "@/orchestrator/session";
 
 // Node runtime: the orchestrator spawns the `claude` CLI. force-dynamic so the
 // route always runs; maxDuration is a hint for hosts (local dev has no limit).
@@ -42,11 +42,12 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.reason }, { status: 422 });
     }
-    // Build the MCQ bank AFTER the response flushes, so Begin stays fast on a live
-    // (custom/specialized) role. after() keeps this work alive past the response,
-    // which a bare fire-and-forget promise in a route handler does not. Idempotent:
-    // a no-op for the pre-seeded template path (bank already populated).
-    after(() => buildSessionBank(result.sessionId));
+    // Build the real topics + MCQ bank AFTER the response flushes, so Begin stays
+    // instant on a live (custom/specialized) role (the blueprint is a ~15s spawn we
+    // no longer block the warm-up on). after() keeps this work alive past the
+    // response, which a bare fire-and-forget promise in a route handler does not.
+    // Idempotent: a no-op for the pre-seeded template path.
+    after(() => materializeSession(result.sessionId));
     return NextResponse.json(result);
   } catch (err) {
     console.error("[api/sessions] startSession failed:", err);

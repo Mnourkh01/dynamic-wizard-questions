@@ -43,3 +43,36 @@ export function templatedOpener(topic: string, language: Language): OpenerQuesti
     level: DISCOVERY_LEVEL,
   };
 }
+
+// A role-level warm-up, used on the live (custom / specialized) path while the
+// topic blueprint is still being built in the background. It is the SAME kind of
+// "explain and show depth" probe as templatedOpener, but its subject is the role
+// or stack the user picked, so it can be shown INSTANTLY at Begin with no AI call
+// and before any topic exists. Its AI-graded depth seeds the assessment's starting
+// level, exactly as the per-topic 101 opener does. The subject reads naturally
+// whether it is a role ("Backend Engineer") or a stack ("Python, GCP, LLM agents").
+export function roleWarmupOpener(subject: string, language: Language): OpenerQuestion {
+  const s = subject.trim();
+  if (language === "ar") {
+    return {
+      text: `للتسخين: بكلامك انت، إيه اللي بتشتغل عليه في "${s}"، وإيه أكتر حاجة بتعرفها كويس فيه؟ ابدأ بسيط، وبعدين ورّي أكبر عمق عندك فعلا.`,
+      rubricPoints: [
+        `يوصّف مجال "${s}" صح وببساطة`,
+        `يشرح إزاي الشغل بيتم فعلا في المجال ده`,
+        `يظهر عمق حقيقي: تفاصيل، مفاضلات، حالات صعبة، أو أنماط فشل`,
+      ],
+      gold: `الإجابة القوية بتوصّف مجال "${s}" صح وببساطة، وتشرح إزاي الشغل بيتم فعلا، وبعدين تظهر عمق (تفاصيل أو مفاضلات أو أنماط فشل) مش مجرد كلام عام.`,
+      level: DISCOVERY_LEVEL,
+    };
+  }
+  return {
+    text: `To warm up: in your own words, what do you work on in "${s}", and which parts do you know best? Keep it simple to start, then show as much depth as you genuinely have.`,
+    rubricPoints: [
+      `Describes the area of "${s}" clearly and correctly`,
+      `Explains how the work is actually done in this area`,
+      `Shows real depth: specifics, trade-offs, edge cases, or failure modes`,
+    ],
+    gold: `A strong answer describes "${s}" clearly, explains how the work is actually done, then shows depth (specifics, trade-offs, or failure modes) rather than staying generic.`,
+    level: DISCOVERY_LEVEL,
+  };
+}

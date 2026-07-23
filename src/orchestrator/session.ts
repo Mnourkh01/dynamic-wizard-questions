@@ -5,7 +5,7 @@ import { runQuestion } from "@/agents/question";
 import { runReporter } from "@/agents/reporter";
 import { classifyAnswer } from "@/core/answers";
 import { gradeFromMcq, isValidMcq } from "@/core/mcq";
-import { templatedOpener } from "@/core/opener";
+import { roleWarmupOpener, templatedOpener } from "@/core/opener";
 import { difficultyBrief } from "@/core/ladder";
 import { getRoleBank } from "@/data/role-banks";
 import { applyGrade, decide, deterministicConfidence, initTopicState } from "@/core/policy";
@@ -362,25 +362,27 @@ export async function startSession(input: {
   // Unknown / custom ("Other") roles also fall back to the live blueprint below.
   const template = specialization ? null : getRoleBank(input.role, language);
 
-  let rawTopics: Array<{ name: string; importance: number; startLevel: number }>;
-  if (template) {
-    rawTopics = template.topics;
-  } else {
-    const blueprint = await runBlueprint({
+  // Live path (custom / specialized role): DEFER the blueprint. Building it is a
+  // ~15s CLI spawn, and it is NOT needed to show the first question, so blocking
+  // Begin on it is exactly the "weird wait" the user hit. Instead we show a
+  // role-level warm-up INSTANTLY on a single provisional topic, and materialize the
+  // real topics in the background (route after() / CLI) with a safety-net await on
+  // the first submit. The warm-up's graded depth seeds the assessment's starting
+  // level, and ensureBlueprint later renames this provisional topic to the
+  // blueprint's top topic and adds the rest, so the session ends with exactly the
+  // blueprint's topics (no extra umbrella topic).
+  if (!template) {
+    return startLiveSession({
       role: input.role,
       specialization,
+      candidateName,
       persona: input.persona,
       language,
     });
-    if (!blueprint.data.assessable || blueprint.data.topics.length === 0) {
-      return {
-        ok: false,
-        reason:
-          "This role could not be turned into a skill assessment. Try a more specific job title.",
-      };
-    }
-    rawTopics = blueprint.data.topics;
   }
+
+  const rawTopics: Array<{ name: string; importance: number; startLevel: number }> =
+    template.topics;
 
   // Normalize importance to exactly 1000 in code, never in the model.
   const normalized = normalizeImportanceTo1000(rawTopics.map((t) => t.importance));
@@ -418,36 +420,24 @@ export async function startSession(input: {
     include: { topics: { orderBy: { order: "asc" } } },
   });
 
-  // Populate the MCQ bank. A pre-seeded template clones instantly (no AI); an
-  // unknown role builds the pool live in ONE batch call. Both are non-fatal: if a
-  // live build fails, the per-question fallback still produces MCQs.
+  // Pre-seeded template: clone the full MCQ bank instantly (no AI). Non-fatal: if a
+  // row is malformed the per-question fallback still produces MCQs.
   const norm = (s: string) => s.trim().toLowerCase();
-  if (template) {
-    const rows = template.bank.flatMap((q) => {
-      const topicRow = session.topics.find((t) => norm(t.name) === norm(q.topicName));
-      if (!topicRow || !isValidMcq(q.options, q.correctIndex)) return [];
-      return [
-        {
-          sessionId: session.id,
-          topicId: topicRow.id,
-          level: q.level,
-          stem: q.stem,
-          optionsJson: JSON.stringify(q.options),
-          correctIndex: q.correctIndex,
-        },
-      ];
-    });
-    if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
-  } else {
-    // Live path (custom or specialized role). Building the whole bank up front is
-    // ~60s, which is exactly the "slow Begin" the pre-seeded roles were meant to
-    // kill. So do NOT build it here. The caller schedules buildSessionBank() to run
-    // AFTER the response is sent (the API route uses Next's after(); the CLI fires
-    // it in the background), because a fire-and-forget promise inside a Next route
-    // handler is dropped once the response flushes. The opener is served by the
-    // single-MCQ fallback, and by the time the user answers Q1 the pool is ready,
-    // so later rounds stay instant.
-  }
+  const rows = template.bank.flatMap((q) => {
+    const topicRow = session.topics.find((t) => norm(t.name) === norm(q.topicName));
+    if (!topicRow || !isValidMcq(q.options, q.correctIndex)) return [];
+    return [
+      {
+        sessionId: session.id,
+        topicId: topicRow.id,
+        level: q.level,
+        stem: q.stem,
+        optionsJson: JSON.stringify(q.options),
+        correctIndex: q.correctIndex,
+      },
+    ];
+  });
+  if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
 
   const decision = decide(states, 0);
   if (decision.kind !== "ask") {
@@ -468,11 +458,246 @@ export async function startSession(input: {
   return { ok: true, sessionId: session.id, question };
 }
 
+// Start a live (custom / specialized) session WITHOUT waiting on the blueprint, so
+// the first question appears instantly. Creates one provisional topic named after
+// the role/stack, writes a role-level warm-up on it (no AI), and marks the session
+// blueprintPending. materializeSession() fills in the real topics + MCQ bank in the
+// background; submitAnswer() awaits ensureBlueprint as a safety net if the user
+// answers before the background build finishes.
+async function startLiveSession(input: {
+  role: string;
+  specialization?: string;
+  candidateName?: string;
+  persona?: Persona;
+  language: Language;
+}): Promise<StartResult> {
+  const { language } = input;
+  const subject = input.specialization ?? input.role;
+  const opener = roleWarmupOpener(subject, language);
+  const provisional = initTopicState({ name: subject, importance: 1, startLevel: opener.level });
+
+  const session = await prisma.session.create({
+    data: {
+      role: input.role,
+      specialization: input.specialization ?? null,
+      candidateName: input.candidateName ?? null,
+      persona: input.persona ? JSON.stringify(input.persona) : null,
+      language,
+      status: "active",
+      blueprintPending: true,
+      topics: {
+        create: [
+          {
+            name: provisional.name,
+            order: 0,
+            importance: provisional.importance,
+            theta: provisional.theta,
+            sigma: provisional.sigma,
+            startLevel: provisional.startLevel,
+            questionsAsked: 1,
+            answeredCount: 0,
+            consecutiveStrong: 0,
+            converged: false,
+            points: 0,
+          },
+        ],
+      },
+    },
+    include: { topics: true },
+  });
+
+  const topicRow = session.topics[0];
+  const rubric: RubricJson = {
+    points: opener.rubricPoints,
+    gold: opener.gold,
+    level: opener.level,
+    maxScore: 100,
+  };
+  const qRow = await prisma.question.create({
+    data: {
+      sessionId: session.id,
+      topicId: topicRow.id,
+      order: 1,
+      difficulty: opener.level,
+      text: opener.text,
+      rubric: JSON.stringify(rubric),
+      maxScore: 100,
+      format: "text",
+    },
+  });
+
+  return {
+    ok: true,
+    sessionId: session.id,
+    question: {
+      questionId: qRow.id,
+      order: 1,
+      topicName: topicRow.name,
+      difficulty: opener.level,
+      ceilingProbe: false,
+      discovery: true,
+      format: "text",
+      text: opener.text,
+    },
+  };
+}
+
+// In-flight blueprint builds, keyed by session, so the background job (route
+// after() / CLI) and the first submit that both call ensureBlueprint share ONE
+// build instead of each spawning a redundant ~15s blueprint. They run in the same
+// server process, so a module-level map dedupes them: the second caller awaits the
+// same promise. Cleared when the build settles.
+const _blueprintInFlight = new Map<string, Promise<void>>();
+
+// Materialize the real topic blueprint for a live-path session whose warm-up was
+// shown before the blueprint finished. Idempotent and safe to call from both the
+// background job and the first submit (concurrent calls are coalesced). Renames the
+// provisional warm-up topic to the blueprint's top topic (keeping its id, theta, and
+// the already-answered warm-up) and adds the rest, so the session ends with exactly
+// the blueprint's topics. Never throws.
+export function ensureBlueprint(sessionId: string): Promise<void> {
+  const existing = _blueprintInFlight.get(sessionId);
+  if (existing) return existing;
+  const p = ensureBlueprintOnce(sessionId).finally(() => {
+    _blueprintInFlight.delete(sessionId);
+  });
+  _blueprintInFlight.set(sessionId, p);
+  return p;
+}
+
+async function ensureBlueprintOnce(sessionId: string): Promise<void> {
+  try {
+    const session = await prisma.session.findUnique({ where: { id: sessionId } });
+    if (!session || !session.blueprintPending) return; // template path, or already built
+
+    const language = session.language as Language;
+    const persona: Persona | undefined = session.persona
+      ? (JSON.parse(session.persona) as Persona)
+      : undefined;
+
+    const blueprint = await runBlueprint({
+      role: session.role,
+      specialization: session.specialization ?? undefined,
+      persona,
+      language,
+    });
+    const usable =
+      blueprint.data.assessable && blueprint.data.topics.length > 0
+        ? blueprint.data.topics
+        : [];
+    const normalized = normalizeImportanceTo1000(usable.map((t) => t.importance));
+
+    // Apply once, atomically. A concurrent caller (background vs first submit) that
+    // loses the claim (blueprintPending already cleared) returns without touching
+    // anything, so topics are never double-created.
+    await prisma.$transaction(async (tx) => {
+      const fresh = await tx.session.findUnique({
+        where: { id: sessionId },
+        include: { topics: { orderBy: { order: "asc" } } },
+      });
+      if (!fresh || !fresh.blueprintPending) return;
+      const provisionalTopic = fresh.topics[0];
+
+      // Empty/nonsense blueprint: keep the provisional warm-up topic as the sole
+      // scored topic so the session still completes rather than dead-ending. Give it
+      // the full weight so a direct DB read matches what scoring renormalizes to.
+      if (usable.length === 0) {
+        await tx.topic.update({
+          where: { id: provisionalTopic.id },
+          data: { importance: 1000 },
+        });
+        await tx.session.update({ where: { id: sessionId }, data: { blueprintPending: false } });
+        return;
+      }
+
+      // The provisional topic BECOMES the blueprint's top topic.
+      await tx.topic.update({
+        where: { id: provisionalTopic.id },
+        data: {
+          name: usable[0].name,
+          importance: normalized[0],
+          startLevel: usable[0].startLevel,
+        },
+      });
+      // The remaining topics are added fresh (they start at the opener floor and get
+      // seeded to the running ability when the engine first reaches them).
+      if (usable.length > 1) {
+        const extra = usable.slice(1).map((t, i) => {
+          const st = initTopicState({
+            name: t.name,
+            importance: normalized[i + 1],
+            startLevel: t.startLevel,
+          });
+          return {
+            sessionId,
+            name: st.name,
+            order: i + 1,
+            importance: st.importance,
+            theta: st.theta,
+            sigma: st.sigma,
+            startLevel: st.startLevel,
+            questionsAsked: 0,
+            answeredCount: 0,
+            consecutiveStrong: 0,
+            converged: false,
+            points: 0,
+          };
+        });
+        await tx.topic.createMany({ data: extra });
+      }
+      await tx.session.update({ where: { id: sessionId }, data: { blueprintPending: false } });
+    });
+  } catch (err) {
+    // Give up gracefully rather than re-spawning a failing blueprint on EVERY later
+    // submit (which would add ~15s to every answer). Clear the flag so the session
+    // falls back to the single provisional warm-up topic and still completes. Only
+    // reweight when the blueprint never applied (still the sole provisional topic);
+    // never overwrite a split that a prior call built successfully.
+    console.error("[ensureBlueprint] failed; warm-up topic will carry the session:", err);
+    try {
+      const topics = await prisma.topic.findMany({
+        where: { sessionId },
+        orderBy: { order: "asc" },
+      });
+      if (topics.length === 1) {
+        await prisma.topic.update({
+          where: { id: topics[0].id },
+          data: { importance: 1000 },
+        });
+      }
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: { blueprintPending: false },
+      });
+    } catch {
+      // best-effort: if even the fallback DB write fails, the flag stays set and a
+      // later submit retries; the provisional topic still lets the session run.
+    }
+  }
+}
+
+// Finish the deferred work for a live session: build the real topics, then the MCQ
+// bank for them. Both idempotent, so this is a no-op for a pre-seeded template
+// session. Meant to run AFTER startSession returns (route after() / CLI background).
+export async function materializeSession(sessionId: string): Promise<void> {
+  await ensureBlueprint(sessionId);
+  await buildSessionBank(sessionId);
+}
+
 export async function submitAnswer(input: {
   sessionId: string;
   questionId: string;
   answer: string;
 }): Promise<AnswerResult> {
+  // Safety net for the deferred (live) path: make sure the real topics exist before
+  // the engine decides the next question. Idempotent and instant once the topics
+  // are built, so it costs nothing on every later submit or on a template session.
+  // The warm-up answer is graded against its own question either way; this only
+  // guarantees the topic list the engine needs. If the user answered the warm-up
+  // faster than the background build, they wait the remainder here (after engaging),
+  // instead of at Begin.
+  await ensureBlueprint(input.sessionId);
+
   const session = await prisma.session.findUniqueOrThrow({
     where: { id: input.sessionId },
     include: { topics: { orderBy: { order: "asc" } } },
