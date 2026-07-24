@@ -118,7 +118,13 @@ function printReport(r: SessionReport): void {
   console.log("\n══════════ RESULT ══════════");
   console.log(`Overall: ${r.total} / 1000  (± ${r.confidenceInterval})  ·  ${r.overallLabel}`);
   for (const t of r.topics) {
-    console.log(`  ${t.points.toString().padStart(4)} / 1000  ${t.name}  (level ${t.theta.toFixed(1)}, ${t.label})`);
+    // A topic's points are out of its OWN importance share, never out of 1000
+    // (same phrasing rule as the reporter agent).
+    const share =
+      t.importance > 0
+        ? `${t.points.toString().padStart(4)} of ${t.importance}`
+        : "not assessed".padStart(12);
+    console.log(`  ${share}  ${t.name}  (level ${t.theta.toFixed(1)}, ${t.label})`);
   }
   if (r.candidateName) console.log(`For: ${r.candidateName}`);
   console.log(`\nVerdict: ${r.verdict}`);

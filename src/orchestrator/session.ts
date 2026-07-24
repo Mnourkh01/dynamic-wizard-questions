@@ -803,6 +803,9 @@ async function submitAnswerOnce(input: {
   let grade: Grade;
   let publicGrade: PublicGrade;
   let llmConfidence = 0;
+  // Confident-but-wrong claims the grader flags in a written answer. MCQs and
+  // degenerate answers have none; previously this was always persisted as [].
+  let misconceptions: string[] = [];
   let answerRow: { id: string; text: string };
 
   if (question.format === "mcq") {
@@ -866,6 +869,7 @@ async function submitAnswerOnce(input: {
         sessionId: input.sessionId,
       });
       llmConfidence = graded.data.confidence;
+      misconceptions = graded.data.misconceptions;
       grade = {
         score: graded.data.score,
         demonstratedLevel: graded.data.demonstratedLevel,
@@ -909,7 +913,7 @@ async function submitAnswerOnce(input: {
           deterministicConfidence: deterministicConfidence(grade),
           matched: JSON.stringify(publicGrade.matched),
           missing: JSON.stringify(publicGrade.missing),
-          misconceptions: JSON.stringify([]),
+          misconceptions: JSON.stringify(misconceptions),
           feedback: publicGrade.feedback,
         },
       }),
