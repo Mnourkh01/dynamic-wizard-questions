@@ -14,6 +14,7 @@ import {
   STRONG_SCORE,
   THETA_MAX,
   THETA_MIN,
+  WEAK_SCORE,
 } from "./constants";
 import { clamp, clampLevel } from "./ladder";
 import type { EngineDecision, Grade, TopicBlueprint, TopicState } from "./types";
@@ -52,11 +53,23 @@ export function deterministicConfidence(grade: Grade): number {
 export function applyGrade(topic: TopicState, grade: Grade): TopicState {
   const c = deterministicConfidence(grade);
   const K = topic.sigma / (topic.sigma + NOISE);
-  const theta = clamp(
-    topic.theta + K * c * (grade.demonstratedLevel - topic.theta),
-    THETA_MIN,
-    THETA_MAX,
-  );
+  // One-sided evidence gate (2026-07-24 calibration). An MCQ grade is censored
+  // evidence, not a point estimate: a PASSING answer only proves ability at
+  // least at the demonstrated level, so it may raise the estimate but never
+  // lower it (the bank holds one item per level, so once the hard items are
+  // used, a correct pick on an easy leftover used to drag a high estimate
+  // down; that is what capped true seniors at ~730-820). A FAILING answer only
+  // proves the ceiling, so it may lower the estimate but never raise it (a
+  // wrong pick on a hard item used to pull weak candidates UP toward it, which
+  // inflated lucky guessers; this also tightens the always-A gaming net).
+  // Mid scores (WEAK_SCORE..STRONG_SCORE, free-text partial credit) keep the
+  // symmetric move: for a graded written answer the demonstrated depth is a
+  // real point estimate and may legitimately pull in either direction.
+  const delta = grade.demonstratedLevel - topic.theta;
+  const passing = grade.score >= STRONG_SCORE && !grade.degenerate;
+  const failing = grade.score < WEAK_SCORE;
+  const gatedDelta = (passing && delta < 0) || (failing && delta > 0) ? 0 : delta;
+  const theta = clamp(topic.theta + K * c * gatedDelta, THETA_MIN, THETA_MAX);
   const sigma = Math.max(topic.sigma * (1 - K * c), SIGMA_FLOOR);
   const answeredCount = topic.answeredCount + 1;
   const consecutiveStrong =

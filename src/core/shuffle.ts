@@ -26,6 +26,13 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+// A seeded [0,1) stream keyed by any string. Reused by the calibration
+// simulator (core/simulate.ts) so probabilistic candidates are reproducible:
+// the same key always yields the same answer sequence.
+export function rngFromKey(key: string): () => number {
+  return mulberry32(seedFromKey(key));
+}
+
 export interface ShuffledMcq {
   options: string[];
   correctIndex: number;
