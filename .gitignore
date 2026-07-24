@@ -24,6 +24,14 @@
 .DS_Store
 *.pem
 
+# local agent/tooling state (session settings, browser profiles), never commit
+.claude/
+.playwright-mcp/
+
+# generated presentation binaries (regenerable, keep the repo lean)
+docs/*.pptx
+docs/*.pdf
+
 # debug
 npm-debug.log*
 yarn-debug.log*
