@@ -62,6 +62,35 @@ export class DomainError extends Error {
   }
 }
 
+// In-flight work maps, keyed by session (or question), so concurrent callers of
+// the same expensive step share ONE run instead of each spawning their own:
+// blueprint (background job vs first submit), bank build (dedup + the "still
+// building, wait for rows" signal in pickBankMcq), and submit (double-fired
+// requests). One server process, BUT a plain module-level const is NOT enough:
+// Next dev compiles each route into its own module graph, so the sessions route
+// (which runs the background build) and the answer route (which must see it)
+// would each get their own empty map. Anchor them on globalThis, same singleton
+// pattern as the Prisma client in db/client.ts. VERIFIED live 2026-07-24: with
+// per-module maps the answer route never saw the in-flight bank build and
+// live-generated every early MCQ instead of waiting for rows seconds away.
+const globalForSession = globalThis as unknown as {
+  _wizardBlueprintInFlight?: Map<string, Promise<void>>;
+  _wizardBankBuildInFlight?: Map<string, Promise<void>>;
+  _wizardSubmitInFlight?: Map<string, Promise<AnswerResult>>;
+};
+const _blueprintInFlight = (globalForSession._wizardBlueprintInFlight ??= new Map<
+  string,
+  Promise<void>
+>());
+const _bankBuildInFlight = (globalForSession._wizardBankBuildInFlight ??= new Map<
+  string,
+  Promise<void>
+>());
+const _submitInFlight = (globalForSession._wizardSubmitInFlight ??= new Map<
+  string,
+  Promise<AnswerResult>
+>());
+
 // Prisma unique-constraint violation (P2002), duck-typed so this file does not
 // depend on the generated client's error classes.
 function isUniqueViolation(err: unknown): boolean {
@@ -125,9 +154,30 @@ async function askQuestion(
   return askText(sessionId, topicId, topicState, decision, language, persona, order);
 }
 
+// Read the valid, unused bank pool for one topic. Only well-formed rows: a
+// malformed correctIndex must never be silently coerced to 0 (that would mark
+// option 0 as the correct answer).
+async function readTopicPool(topicId: string) {
+  return (await prisma.bankQuestion.findMany({ where: { topicId, used: false } }))
+    .map((row) => ({ row, options: safeParseArray(row.optionsJson) }))
+    .filter(({ row, options }) => isValidMcq(options, row.correctIndex));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// How long an empty-pool pick waits on the in-flight background bank build
+// before giving up and generating one MCQ live. Topic builds take ~25-40s each,
+// so by the time the engine reaches a topic its rows are usually seconds away.
+const BANK_WAIT_MAX_MS = 30_000;
+const BANK_WAIT_POLL_MS = 1_000;
+
 // Pull the next MCQ for a topic from the pre-generated pool, nearest to the target
-// difficulty, marking it used. Falls back to a single live MCQ if the pool is
-// empty (batch builder under-produced or failed at start).
+// difficulty, marking it used. If the pool is empty while the background bank
+// build is still running, wait briefly for this topic's rows (cheaper and faster
+// than a live generation call). Falls back to a single live MCQ only when the
+// build is done (or timed out) and the pool is still empty.
 async function pickBankMcq(
   sessionId: string,
   topicId: string,
@@ -135,11 +185,17 @@ async function pickBankMcq(
   difficulty: number,
   language: Language,
 ): Promise<{ stem: string; options: string[]; correctIndex: number; level: number }> {
-  // Only serve well-formed bank rows. A malformed correctIndex must never be
-  // silently coerced to 0 (that would mark option 0 as the correct answer).
-  const pool = (await prisma.bankQuestion.findMany({ where: { topicId, used: false } }))
-    .map((row) => ({ row, options: safeParseArray(row.optionsJson) }))
-    .filter(({ row, options }) => isValidMcq(options, row.correctIndex));
+  let pool = await readTopicPool(topicId);
+
+  if (pool.length === 0 && _bankBuildInFlight.has(sessionId)) {
+    const deadline = Date.now() + BANK_WAIT_MAX_MS;
+    while (Date.now() < deadline) {
+      const buildStillRunning = _bankBuildInFlight.has(sessionId);
+      pool = await readTopicPool(topicId);
+      if (pool.length > 0 || !buildStillRunning) break;
+      await sleep(BANK_WAIT_POLL_MS);
+    }
+  }
 
   if (pool.length > 0) {
     pool.sort(
@@ -316,13 +372,70 @@ async function askText(
   };
 }
 
+// Build the bank rows for ONE topic (one bank-builder call). Idempotent (skips a
+// topic that already has rows) and non-fatal: a failed topic is covered by the
+// wait-then-fallback in pickBankMcq.
+async function buildTopicBank(
+  sessionId: string,
+  topic: { id: string; name: string },
+  role: string,
+  specialization: string | undefined,
+  language: Language,
+): Promise<void> {
+  const norm = (s: string) => s.trim().toLowerCase();
+  try {
+    const existing = await prisma.bankQuestion.count({ where: { topicId: topic.id } });
+    if (existing > 0) return;
+    const bank = await runBankBuilder({
+      role,
+      specialization,
+      topics: [topic.name],
+      language,
+      sessionId,
+    });
+    // Single-topic call: match the echoed name, but if the model returned
+    // exactly one topic entry, trust it for the requested topic even when the
+    // echoed name drifted (e.g. translated or lightly reworded).
+    const entry =
+      bank.data.topics.find((bt) => norm(bt.name) === norm(topic.name)) ??
+      (bank.data.topics.length === 1 ? bank.data.topics[0] : undefined);
+    if (!entry) return;
+    const rows = entry.questions.flatMap((q) =>
+      isValidMcq(q.options, q.correctIndex)
+        ? [
+            {
+              sessionId,
+              topicId: topic.id,
+              level: q.level,
+              stem: q.stem,
+              optionsJson: JSON.stringify(q.options),
+              correctIndex: q.correctIndex,
+            },
+          ]
+        : [],
+    );
+    if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
+  } catch (err) {
+    console.error(
+      `[buildLiveBank] topic "${topic.name}" bank build failed, live MCQ fallback covers it:`,
+      err,
+    );
+  }
+}
+
+// How many topic bank builds run at once. A fast candidate burns ~3 MCQs per
+// topic (the per-topic soft target) in seconds, so a sequential build loses the
+// race at every topic boundary. Four concurrent small calls put the first four
+// topics' rows in the DB together ~50s after Begin and the rest ~30s later,
+// which keeps the bank ahead of even a no-think candidate; failures fall back
+// to the wait-then-live path in pickBankMcq.
+const BANK_BUILD_CONCURRENCY = 4;
+
 // Build the MCQ bank for a live (custom / specialized) role in the background,
-// ONE TOPIC PER CALL in engine walk order. The engine asks ~3 questions on the
-// first topic before opening the next, so landing the first topic's rows in ~30s
-// (instead of one ~3min batch for all topics) means early MCQ rounds hit the bank
-// instead of the slow single-MCQ live fallback. Per-topic idempotency (skip topics
-// that already have rows) also lets a crashed build resume where it stopped.
-// Non-fatal per topic: a failed topic is covered by the fallback in pickBankMcq.
+// one bank-builder call PER topic, all through a bounded worker pool in engine
+// walk order (the order the assessment will need them). Per-topic idempotency
+// (skip topics that already have rows) lets a crashed build resume with only
+// the missing topics.
 async function buildLiveBank(
   sessionId: string,
   topics: { id: string; name: string }[],
@@ -330,47 +443,19 @@ async function buildLiveBank(
   specialization: string | undefined,
   language: Language,
 ): Promise<void> {
-  const norm = (s: string) => s.trim().toLowerCase();
-  for (const topic of topics) {
-    try {
-      const existing = await prisma.bankQuestion.count({ where: { topicId: topic.id } });
-      if (existing > 0) continue;
-      const bank = await runBankBuilder({
-        role,
-        specialization,
-        topics: [topic.name],
-        language,
-        sessionId,
-      });
-      // Single-topic call: match the echoed name, but if the model returned
-      // exactly one topic entry, trust it for the requested topic even when the
-      // echoed name drifted (e.g. translated or lightly reworded).
-      const entry =
-        bank.data.topics.find((bt) => norm(bt.name) === norm(topic.name)) ??
-        (bank.data.topics.length === 1 ? bank.data.topics[0] : undefined);
-      if (!entry) continue;
-      const rows = entry.questions.flatMap((q) =>
-        isValidMcq(q.options, q.correctIndex)
-          ? [
-              {
-                sessionId,
-                topicId: topic.id,
-                level: q.level,
-                stem: q.stem,
-                optionsJson: JSON.stringify(q.options),
-                correctIndex: q.correctIndex,
-              },
-            ]
-          : [],
-      );
-      if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
-    } catch (err) {
-      console.error(
-        `[buildLiveBank] topic "${topic.name}" bank build failed, live MCQ fallback covers it:`,
-        err,
-      );
-    }
-  }
+  if (topics.length === 0) return;
+  // Single-threaded event loop, so the shared index is race-free.
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.min(BANK_BUILD_CONCURRENCY, topics.length) },
+    async () => {
+      while (next < topics.length) {
+        const topic = topics[next++];
+        await buildTopicBank(sessionId, topic, role, specialization, language);
+      }
+    },
+  );
+  await Promise.all(workers);
 }
 
 // Build the MCQ bank for an already-started live session, loading everything it
@@ -379,11 +464,6 @@ async function buildLiveBank(
 // startSession returns, off the Begin critical path, by whoever owns the process
 // long enough to finish it: the API route via Next's after(), the CLI in the
 // background. Never throws.
-// In-flight bank builds, same dedup pattern as _blueprintInFlight: BankQuestion
-// has no unique constraint, so two concurrent builders would double-insert rows.
-// One server process, so a module-level map is enough.
-const _bankBuildInFlight = new Map<string, Promise<void>>();
-
 export function buildSessionBank(sessionId: string): Promise<void> {
   const existing = _bankBuildInFlight.get(sessionId);
   if (existing) return existing;
@@ -614,13 +694,6 @@ async function startLiveSession(input: {
   };
 }
 
-// In-flight blueprint builds, keyed by session, so the background job (route
-// after() / CLI) and the first submit that both call ensureBlueprint share ONE
-// build instead of each spawning a redundant ~15s blueprint. They run in the same
-// server process, so a module-level map dedupes them: the second caller awaits the
-// same promise. Cleared when the build settles.
-const _blueprintInFlight = new Map<string, Promise<void>>();
-
 // Materialize the real topic blueprint for a live-path session whose warm-up was
 // shown before the blueprint finished. Idempotent and safe to call from both the
 // background job and the first submit (concurrent calls are coalesced). Renames the
@@ -756,13 +829,6 @@ export async function materializeSession(sessionId: string): Promise<void> {
   await ensureBlueprint(sessionId);
   await buildSessionBank(sessionId);
 }
-
-// In-flight submits keyed by question, so a double-fired request (impatient
-// double click, or a client retry racing a slow grader) awaits the SAME work
-// instead of spawning a second grader call or tripping the Answer unique
-// constraint. Same pattern as _blueprintInFlight; single server process, so a
-// module-level map is enough. Cleared when the submit settles.
-const _submitInFlight = new Map<string, Promise<AnswerResult>>();
 
 export async function submitAnswer(input: {
   sessionId: string;
