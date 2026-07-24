@@ -1,3 +1,4 @@
+import { stripTrailingTagDebris } from "@/core/answers";
 import type { Language } from "@/core/types";
 import { runAgent } from "./client";
 import { AGENTS } from "./config";
@@ -48,5 +49,16 @@ export async function runGrader(input: {
     maxBudgetUsd: cfg.maxBudgetUsd,
     groupId: input.sessionId,
   });
-  return { data: res.data, costUsd: res.costUsd };
+  // The model occasionally mimics the prompt's XML-ish wrappers and leaves
+  // closing-tag debris at the end of string values; scrub it in code so it
+  // never reaches the UI or the stored evaluation.
+  const d = res.data;
+  const data: GradeOutput = {
+    ...d,
+    feedback: stripTrailingTagDebris(d.feedback),
+    matched: d.matched.map(stripTrailingTagDebris),
+    missing: d.missing.map(stripTrailingTagDebris),
+    misconceptions: d.misconceptions.map(stripTrailingTagDebris),
+  };
+  return { data, costUsd: res.costUsd };
 }

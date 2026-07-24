@@ -316,10 +316,13 @@ async function askText(
   };
 }
 
-// Build the full MCQ bank for a live (custom / specialized) role in the background.
-// Runs off the Begin critical path so the first question is not blocked ~60s on the
-// batch build. Non-fatal: any gap is covered by the single-MCQ fallback in
-// pickBankMcq. Fire-and-forget on the long-lived local server.
+// Build the MCQ bank for a live (custom / specialized) role in the background,
+// ONE TOPIC PER CALL in engine walk order. The engine asks ~3 questions on the
+// first topic before opening the next, so landing the first topic's rows in ~30s
+// (instead of one ~3min batch for all topics) means early MCQ rounds hit the bank
+// instead of the slow single-MCQ live fallback. Per-topic idempotency (skip topics
+// that already have rows) also lets a crashed build resume where it stopped.
+// Non-fatal per topic: a failed topic is covered by the fallback in pickBankMcq.
 async function buildLiveBank(
   sessionId: string,
   topics: { id: string; name: string }[],
@@ -328,23 +331,30 @@ async function buildLiveBank(
   language: Language,
 ): Promise<void> {
   const norm = (s: string) => s.trim().toLowerCase();
-  try {
-    const bank = await runBankBuilder({
-      role,
-      specialization,
-      topics: topics.map((t) => t.name),
-      language,
-      sessionId,
-    });
-    const rows = bank.data.topics.flatMap((bt) => {
-      const topicRow = topics.find((t) => norm(t.name) === norm(bt.name));
-      if (!topicRow) return [];
-      return bt.questions.flatMap((q) =>
+  for (const topic of topics) {
+    try {
+      const existing = await prisma.bankQuestion.count({ where: { topicId: topic.id } });
+      if (existing > 0) continue;
+      const bank = await runBankBuilder({
+        role,
+        specialization,
+        topics: [topic.name],
+        language,
+        sessionId,
+      });
+      // Single-topic call: match the echoed name, but if the model returned
+      // exactly one topic entry, trust it for the requested topic even when the
+      // echoed name drifted (e.g. translated or lightly reworded).
+      const entry =
+        bank.data.topics.find((bt) => norm(bt.name) === norm(topic.name)) ??
+        (bank.data.topics.length === 1 ? bank.data.topics[0] : undefined);
+      if (!entry) continue;
+      const rows = entry.questions.flatMap((q) =>
         isValidMcq(q.options, q.correctIndex)
           ? [
               {
                 sessionId,
-                topicId: topicRow.id,
+                topicId: topic.id,
                 level: q.level,
                 stem: q.stem,
                 optionsJson: JSON.stringify(q.options),
@@ -353,10 +363,13 @@ async function buildLiveBank(
             ]
           : [],
       );
-    });
-    if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
-  } catch (err) {
-    console.error("[startSession] background bank build failed, using live MCQ fallback:", err);
+      if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
+    } catch (err) {
+      console.error(
+        `[buildLiveBank] topic "${topic.name}" bank build failed, live MCQ fallback covers it:`,
+        err,
+      );
+    }
   }
 }
 
@@ -366,10 +379,26 @@ async function buildLiveBank(
 // startSession returns, off the Begin critical path, by whoever owns the process
 // long enough to finish it: the API route via Next's after(), the CLI in the
 // background. Never throws.
-export async function buildSessionBank(sessionId: string): Promise<void> {
+// In-flight bank builds, same dedup pattern as _blueprintInFlight: BankQuestion
+// has no unique constraint, so two concurrent builders would double-insert rows.
+// One server process, so a module-level map is enough.
+const _bankBuildInFlight = new Map<string, Promise<void>>();
+
+export function buildSessionBank(sessionId: string): Promise<void> {
+  const existing = _bankBuildInFlight.get(sessionId);
+  if (existing) return existing;
+  const p = buildSessionBankOnce(sessionId).finally(() => {
+    _bankBuildInFlight.delete(sessionId);
+  });
+  _bankBuildInFlight.set(sessionId, p);
+  return p;
+}
+
+async function buildSessionBankOnce(sessionId: string): Promise<void> {
   try {
-    const existing = await prisma.bankQuestion.count({ where: { sessionId } });
-    if (existing > 0) return;
+    // No session-level "bank exists" short-circuit: buildLiveBank skips per topic,
+    // so a template session (all topics pre-filled) is still a no-op and a build
+    // that crashed halfway resumes with only the missing topics.
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
       include: { topics: { orderBy: { order: "asc" } } },

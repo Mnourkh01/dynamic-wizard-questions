@@ -19,6 +19,16 @@ export interface AnswerClassification {
   reason?: string;
 }
 
+// Agent prompts wrap data in XML-ish tags (<answer>...</answer>), and the model
+// occasionally mimics them, leaving closing-tag debris like "</feedback>\n</invoke>"
+// glued to the END of a JSON string value. Strip only a trailing run of closing
+// tags, so a legitimate mid-sentence mention of a tag is never touched.
+const TRAILING_TAG_DEBRIS = /(\s*<\/[a-zA-Z][\w.-]*>)+\s*$/;
+
+export function stripTrailingTagDebris(text: string): string {
+  return text.replace(TRAILING_TAG_DEBRIS, "").trimEnd();
+}
+
 export function classifyAnswer(text: string): AnswerClassification {
   const trimmed = text.trim();
 
