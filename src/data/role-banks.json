@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedRoles": 10,
+  "generatedRoles": 20,
   "roles": [
     {
       "role": "Backend Engineer",
@@ -4629,6 +4629,4766 @@
             "Blame the developers and redesign everything from scratch"
           ],
           "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "role": "Backend Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "API Design and Development",
+          "importance": 150,
+          "startLevel": 4
+        },
+        {
+          "name": "Database Design and Optimization",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "System Architecture and Scalability",
+          "importance": 130,
+          "startLevel": 3
+        },
+        {
+          "name": "Server-side Programming Languages",
+          "importance": 145,
+          "startLevel": 5
+        },
+        {
+          "name": "Security, Authentication, and Authorization",
+          "importance": 135,
+          "startLevel": 3
+        },
+        {
+          "name": "Performance Monitoring and Optimization",
+          "importance": 120,
+          "startLevel": 3
+        },
+        {
+          "name": "Testing and Code Quality",
+          "importance": 125,
+          "startLevel": 4
+        },
+        {
+          "name": "DevOps, Deployment, and Infrastructure",
+          "importance": 110,
+          "startLevel": 3
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "API Design and Development",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين REST API و SOAP؟",
+          "options": [
+            "REST يستخدم HTTP بينما SOAP يستخدم البريد الإلكتروني",
+            "REST أخف وزناً وأكثر مرونة، SOAP أثقل وأكثر رسمية",
+            "كلاهما متطابق تماماً",
+            "SOAP أسرع من REST دائماً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Development",
+          "level": 4,
+          "stem": "في API design، ماذا يعني versioning؟",
+          "options": [
+            "تخزين نسخ قديمة من التوثيق فقط",
+            "الحفاظ على compatibility مع التغييرات والتطورات",
+            "إضافة أرقام للخوادم",
+            "تغيير اسم الـ endpoints"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Development",
+          "level": 5,
+          "stem": "عند تصميم API عام، ما هي أفضل ممارسة لمعالجة الأخطاء؟",
+          "options": [
+            "إرجاع HTTP 200 دائماً مع رسالة خطأ في الـ body",
+            "استخدام HTTP status codes المناسبة وتوفير رسائل خطأ واضحة",
+            "تسجيل الأخطاء فقط في الـ server",
+            "إرجاع صفحات HTML للأخطاء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Development",
+          "level": 7,
+          "stem": "في API عالي الحمل، ما هي استراتيجية rate limiting الأفضل؟",
+          "options": [
+            "حظر جميع الطلبات بعد الحد مباشرة",
+            "استخدام token bucket algorithm مع degradation سلس",
+            "قطع الاتصال عند أول تجاوز",
+            "عدم استخدام rate limiting"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Development",
+          "level": 9,
+          "stem": "عند بناء API يدعم عملاء متعددين مع متطلبات مختلفة، ما هو التحدي الأساسي؟",
+          "options": [
+            "اختيار لغة البرمجة فقط",
+            "الموازنة بين المرونة والأداء والتوافق مع التطور",
+            "استخدام أحدث التقنيات دائماً",
+            "تجاهل العملاء القدامى"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Optimization",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين قواعد البيانات العلائقية وNoSQL؟",
+          "options": [
+            "NoSQL أسرع دائماً",
+            "العلائقية منظمة جداً، NoSQL أكثر مرونة في الهيكل",
+            "العلائقية تستخدم الـ cloud فقط",
+            "NoSQL لا تحتاج إلى نسخ احتياطية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Optimization",
+          "level": 4,
+          "stem": "ما هو الفهرس (Index) في قاعدة البيانات؟",
+          "options": [
+            "نسخة احتياطية من البيانات",
+            "بنية تسريع البحث والاستعلامات",
+            "طريقة لتشفير البيانات",
+            "جدول إضافي"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Optimization",
+          "level": 5,
+          "stem": "كيف تؤثر عملية normalization على أداء قاعدة البيانات؟",
+          "options": [
+            "تزيد السرعة دائماً",
+            "تقلل التكرار والـ anomalies لكن قد تزيد الـ queries المعقدة",
+            "تحذف البيانات المهمة",
+            "لا تؤثر على الأداء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Optimization",
+          "level": 7,
+          "stem": "في نظام يتطلب scalability عالية، ما هي أفضل استراتيجية sharding؟",
+          "options": [
+            "وضع جميع البيانات في جدول واحد",
+            "تقسيم البيانات بناءً على مفتاح معين مع توازن الحمل",
+            "نسخ نفس البيانات في كل جهاز",
+            "عدم استخدام قواعد بيانات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Optimization",
+          "level": 9,
+          "stem": "عند اختيار بين SQL و NoSQL لمشروع معقد، ما هو التوازن الحرج؟",
+          "options": [
+            "SQL أفضل دائماً",
+            "Tradeoff بين ACID properties والمرونة والتوسع الأفقي",
+            "NoSQL أفضل دائماً",
+            "يجب استخدام النوعين معاً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين vertical scaling و horizontal scaling؟",
+          "options": [
+            "Vertical يضيف أجهزة جديدة، horizontal يزيد موارد الجهاز الواحد",
+            "Horizontal يضيف أجهزة جديدة، vertical يزيد موارد الجهاز الواحد",
+            "كلاهما نفس الشيء",
+            "لا فرق بينهما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 4,
+          "stem": "ماذا يعني load balancing في الأنظمة الموزعة؟",
+          "options": [
+            "حذف الطلبات غير الضرورية",
+            "توزيع الطلبات على عدة خوادم",
+            "تخزين البيانات فقط",
+            "تقليل عدد المستخدمين"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 5,
+          "stem": "في معمارية microservices، ما هو التحدي الرئيسي؟",
+          "options": [
+            "الحصول على أداء أفضل تلقائياً",
+            "إدارة التعقيد والاتصالات بين الخدمات",
+            "تقليل عدد الأخطاء",
+            "لا توجد تحديات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 7,
+          "stem": "عند بناء نظام يتطلب high availability، ما هي الاستراتيجية الأمثل؟",
+          "options": [
+            "استخدام خادم واحد قوي جداً",
+            "redundancy مع failover automation وhealth checks",
+            "الاعتماد على الـ backup اليدوي",
+            "عدم القلق من التوقف"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 9,
+          "stem": "في نظام عالي التوسع، ما هو التوازن الحرج بين consistency و availability؟",
+          "options": [
+            "يجب اختيار أحدهما فقط",
+            "CAP theorem يفرض tradeoffs بين Consistency, Availability, Partition tolerance",
+            "كل الأنظمة يمكنها تحقيق الكل",
+            "لا توجد tradeoffs"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Server-side Programming Languages",
+          "level": 2,
+          "stem": "ما هو المقصود باللغة statically typed؟",
+          "options": [
+            "لا تحتاج إلى تجميع",
+            "يتم تحديد أنواع البيانات قبل التشغيل",
+            "تعمل بسرعة عالية جداً",
+            "لا تدعم الدوال"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Server-side Programming Languages",
+          "level": 4,
+          "stem": "ما هو الفرق بين interpreted languages و compiled languages؟",
+          "options": [
+            "Compiled أبطأ دائماً",
+            "Compiled تترجم قبل التشغيل، interpreted تترجم أثناء التشغيل",
+            "Interpreted أكثر أماناً",
+            "لا فرق في الأداء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Server-side Programming Languages",
+          "level": 5,
+          "stem": "في اختيار لغة backend، ما هي العوامل المهمة؟",
+          "options": [
+            "الشهرة فقط",
+            "الأداء والمكتبات والفريق والمشروع",
+            "أحدث لغة دائماً",
+            "أقدم لغة دائماً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Server-side Programming Languages",
+          "level": 7,
+          "stem": "عند بناء نظام يتطلب concurrency عالية، ما هي اعتبارات اختيار اللغة؟",
+          "options": [
+            "السرعة الخام فقط",
+            "دعم async، garbage collection، وإدارة الذاكرة",
+            "عدد الأسطر فقط",
+            "الإنتاجية بدون اعتبار الأداء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Server-side Programming Languages",
+          "level": 9,
+          "stem": "ما هو التوازن الحرج في اختيار لغة backend بين سرعة التطوير والأداء؟",
+          "options": [
+            "يجب اختيار أحدهما فقط",
+            "Tradeoff بين time-to-market و runtime performance مع احتياجات المشروع",
+            "يمكن تحقيق الكل معاً دائماً",
+            "السرعة أهم من كل شيء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Security, Authentication, and Authorization",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين authentication و authorization؟",
+          "options": [
+            "كلاهما نفس الشيء",
+            "Authentication هو التحقق من الهوية، authorization هو السماح بالوصول",
+            "Authorization يحدث أولاً",
+            "Authentication أكثر أماناً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Security, Authentication, and Authorization",
+          "level": 4,
+          "stem": "ما هي مزايا استخدام JWT tokens؟",
+          "options": [
+            "لا تحتاج إلى تشفير",
+            "stateless وقابلة للتحقق والتوسع",
+            "تخزن جميع بيانات المستخدم",
+            "آمنة تماماً بدون معالجة إضافية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Security, Authentication, and Authorization",
+          "level": 5,
+          "stem": "عند تخزين كلمات المرور، ما هي أفضل ممارسة؟",
+          "options": [
+            "تخزين النص العادي",
+            "استخدام hashing قوي مع salt عشوائي",
+            "تشفير بسيط",
+            "عدم تخزين كلمات المرور"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Security, Authentication, and Authorization",
+          "level": 7,
+          "stem": "في نظام يتطلب أمان عالي، ما هي استراتيجية الحماية من CSRF attacks؟",
+          "options": [
+            "تصديق الطلبات بناءً على الـ IP فقط",
+            "استخدام CSRF tokens مع same-site cookies",
+            "عدم القلق من CSRF",
+            "السماح بجميع الطلبات من أي مصدر"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Security, Authentication, and Authorization",
+          "level": 9,
+          "stem": "ما هو التوازن الحرج بين الأمان وتجربة المستخدم في عملية authentication؟",
+          "options": [
+            "الأمان أهم دائماً",
+            "Balance بين MFA، session timeout، وسهولة الاستخدام",
+            "تقليل الأمان لراحة المستخدم",
+            "لا توجد تضاربات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Performance Monitoring and Optimization",
+          "level": 2,
+          "stem": "ما هو الـ latency في السياق التقني؟",
+          "options": [
+            "كمية البيانات المنقولة",
+            "الوقت المستغرق للطلب من البداية للنهاية",
+            "عدد الخوادم المستخدمة",
+            "سعر الخدمة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Performance Monitoring and Optimization",
+          "level": 4,
+          "stem": "ما هو profiling في السياق التطويري؟",
+          "options": [
+            "كتابة التوثيق",
+            "قياس الموارد والأداء أثناء التنفيذ",
+            "حذف الكود",
+            "إضافة تعليقات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Performance Monitoring and Optimization",
+          "level": 5,
+          "stem": "كيف تتعامل مع bottlenecks في الأداء؟",
+          "options": [
+            "تخمين أين المشكلة",
+            "قياس وتحديد وتحسين العمليات البطيئة",
+            "إضافة موارد عشوائية",
+            "تجاهل المشكلة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Performance Monitoring and Optimization",
+          "level": 7,
+          "stem": "في نظام يعاني من بطء في الـ database queries، ما هي الاستراتيجية الفعالة؟",
+          "options": [
+            "تشغيل جميع الـ queries بالتوازي",
+            "تحليل، indexing، query optimization، وcaching",
+            "استخدام قاعدة بيانات أخرى",
+            "زيادة عدد الخوادم فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Performance Monitoring and Optimization",
+          "level": 9,
+          "stem": "في نظام يتطلب latency منخفضة جداً، ما هي الـ tradeoffs في التحسين؟",
+          "options": [
+            "التحسين يحسن كل شيء بدون تضاربات",
+            "Caching، async processing وdistributed architecture مقابل complexity",
+            "يمكن فقط تحسين الأداء على حساب الأمان",
+            "لا يمكن تحسين الأداء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين unit tests و integration tests؟",
+          "options": [
+            "كلاهما نفس الشيء",
+            "Unit تختبر وحدات فردية، integration تختبر التفاعل بينها",
+            "Integration أسهل من unit",
+            "Unit tests لا تحتاج إلى كود"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 4,
+          "stem": "ما هو الغرض من code coverage؟",
+          "options": [
+            "توضيح الكود فقط",
+            "قياس نسبة الكود المختبرة بالـ tests",
+            "ضمان عدم وجود أخطاء",
+            "تسريع التطوير"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 5,
+          "stem": "في كتابة tests فعالة، ما هي أفضل ممارسة؟",
+          "options": [
+            "كتابة tests طويلة جداً",
+            "tests بسيطة وسهلة الفهم مع حالات اختبار واضحة",
+            "كتابة tests عشوائية",
+            "عدم كتابة tests"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 7,
+          "stem": "في نظام معقد، كيف تتعامل مع اختبار external dependencies؟",
+          "options": [
+            "استدعاء الخدمات الخارجية فعلياً في كل test",
+            "استخدام mocks و stubs لمحاكاة التفاعلات",
+            "تخطي الاختبارات المتعلقة بـ dependencies",
+            "عدم اختبار dependencies"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 9,
+          "stem": "ما هو التوازن الحرج بين كمية الـ tests وسرعة التطوير؟",
+          "options": [
+            "كتابة tests لا حد لها",
+            "Tradeoff بين coverage والـ ROI والـ maintenance cost",
+            "عدم الحاجة إلى tests",
+            "كل tests متساوية القيمة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps, Deployment, and Infrastructure",
+          "level": 2,
+          "stem": "ما هو المقصود بـ CI/CD؟",
+          "options": [
+            "نوع من قواعد البيانات",
+            "Continuous Integration و Continuous Deployment",
+            "لغة برمجية",
+            "نوع من الخوادم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps, Deployment, and Infrastructure",
+          "level": 4,
+          "stem": "ما هو Docker وما فائدته؟",
+          "options": [
+            "نوع من قواعد البيانات",
+            "تطبيق containerization لتوحيد البيئات",
+            "لغة برمجة",
+            "نوع من الـ networks"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps, Deployment, and Infrastructure",
+          "level": 5,
+          "stem": "في نشر التطبيقات، ما هي مميزات الـ infrastructure as code؟",
+          "options": [
+            "بطء النشر",
+            "اتساق وتكرار وسهولة النسخ الاحتياطية",
+            "صعوبة الإدارة",
+            "زيادة الأخطاء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps, Deployment, and Infrastructure",
+          "level": 7,
+          "stem": "في استراتيجية نشر عالية الموثوقية، ما هي الأفضلية؟",
+          "options": [
+            "نشر الكل مرة واحدة",
+            "Blue-green deployments مع rollback automation",
+            "نشر بطيء جداً",
+            "لا توجد استراتيجيات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps, Deployment, and Infrastructure",
+          "level": 9,
+          "stem": "في إدارة infrastructure موزعة، ما هو التوازن الحرج بين automation و control؟",
+          "options": [
+            "automation تحل جميع المشاكل",
+            "Balance بين automation للسرعة و manual controls للأمان",
+            "لا نحتاج automation",
+            "الـ manual أفضل دائماً"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "role": "Frontend Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "JavaScript/TypeScript Fundamentals",
+          "importance": 9,
+          "startLevel": 4
+        },
+        {
+          "name": "Component-Based Architecture",
+          "importance": 9,
+          "startLevel": 4
+        },
+        {
+          "name": "State Management & Reactivity",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "CSS & Responsive Design",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "API Integration & Async Programming",
+          "importance": 8,
+          "startLevel": 5
+        },
+        {
+          "name": "Web Performance & Optimization",
+          "importance": 7,
+          "startLevel": 3
+        },
+        {
+          "name": "Testing, Debugging & DevTools",
+          "importance": 7,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "JavaScript/TypeScript Fundamentals",
+          "level": 2,
+          "stem": "ما هو نوع البيانات للقيمة undefined في JavaScript؟",
+          "options": [
+            "null",
+            "undefined",
+            "object",
+            "symbol"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "JavaScript/TypeScript Fundamentals",
+          "level": 4,
+          "stem": "ما الفرق الرئيسي بين const و let في TypeScript؟",
+          "options": [
+            "const يمكن تعديل قيمتها بينما let لا",
+            "const تنشئ scope عام بينما let تنشئ scope محلي",
+            "const لا يمكن تعديل القيمة المُسندة لها بينما let يمكن",
+            "const و let متطابقان تماماً"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "JavaScript/TypeScript Fundamentals",
+          "level": 5,
+          "stem": "ماذا سيطبع الكود التالي؟\nfunction test() {\n  console.log(x);\n  var x = 5;\n}\ntest();",
+          "options": [
+            "5",
+            "undefined",
+            "خطأ: x غير معرّف",
+            "null"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "JavaScript/TypeScript Fundamentals",
+          "level": 7,
+          "stem": "أي من التالي يعكس الفرق الأساسي بين closure و function scope؟",
+          "options": [
+            "closure تحفظ reference للمتغيرات من outer scope حتى بعد انتهاء الدالة الخارجية",
+            "function scope توفر أداء أفضل من closure",
+            "closure لا يمكنها الوصول للمتغيرات العامة",
+            "function scope تُستخدم فقط مع async functions"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "JavaScript/TypeScript Fundamentals",
+          "level": 9,
+          "stem": "في TypeScript، ما الفرق بين `interface` و `type` عند استخدام intersection و union؟",
+          "options": [
+            "interface تدعم union فقط بينما type تدعم intersection فقط",
+            "type يمكنها استخدام union بسهولة بينما interface تحتاج extends لـ intersection",
+            "كلاهما متماثل تماماً في كل الحالات",
+            "interface أسرع في الأداء من type في جميع الظروف"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Component-Based Architecture",
+          "level": 2,
+          "stem": "ما هو الهدف الأساسي من استخدام components في React؟",
+          "options": [
+            "تقليل حجم ملف HTML النهائي",
+            "تقسيم واجهة المستخدم إلى أجزاء قابلة لإعادة الاستخدام",
+            "زيادة سرعة التطبيق",
+            "استبدال CSS بكود JavaScript"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Component-Based Architecture",
+          "level": 4,
+          "stem": "ما الفرق بين Functional Components و Class Components في React؟",
+          "options": [
+            "Class Components أسرع دائماً من Functional Components",
+            "Functional Components لا تستطيع استخدام state",
+            "Class Components تستخدم lifecycle methods بينما Functional Components تستخدم hooks",
+            "Functional Components تعمل فقط مع TypeScript"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Component-Based Architecture",
+          "level": 5,
+          "stem": "متى يجب استخدام React.memo لـ component؟",
+          "options": [
+            "لجميع components لضمان أداء أفضل",
+            "فقط للـ components التي تعيد rendering كثير بدون تغيير props",
+            "لا توجد حالة محددة، إنها اختيارية تماماً",
+            "فقط عند استخدام Redux في التطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Component-Based Architecture",
+          "level": 7,
+          "stem": "ما المشكلة المحتملة عند استخدام props بشكل مباشر كـ default values في component؟",
+          "options": [
+            "لا توجد مشكلة، إنها أفضل ممارسة",
+            "Props قد تتغير خلال lifecycle component مما يسبب bugs خفية",
+            "هذا يقلل من قابلية إعادة استخدام component",
+            "React سيرمي خطأ في development mode"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Component-Based Architecture",
+          "level": 9,
+          "stem": "عند تمرير function كـ prop إلى child component، كيف تتجنب unnecessary re-renders؟",
+          "options": [
+            "استخدم useMemo و useCallback معاً، مع تتبع dependencies بدقة",
+            "لا يوجد حل، الـ re-renders دائماً حتمية",
+            "استخدم React.memo بدون أي إجراء إضافي",
+            "مرر الـ function كـ string بدلاً من function reference"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "State Management & Reactivity",
+          "level": 2,
+          "stem": "ما هو الغرض من استخدام useState hook في React؟",
+          "options": [
+            "لإدارة البيانات على مستوى التطبيق الكامل",
+            "لإضافة state محلي إلى Functional Component",
+            "لتقليل حجم bundle",
+            "لتحسين تواصل المتصفح مع الخادم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management & Reactivity",
+          "level": 4,
+          "stem": "ماذا يحدث إذا استدعيت setState بنفس القيمة التي موجودة حالياً في React؟",
+          "options": [
+            "سيحدث re-render بالتأكيد",
+            "React قد تتجاهل التحديث وتمنع re-render",
+            "سيرمي error في console",
+            "state سيتم حذفه تماماً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management & Reactivity",
+          "level": 5,
+          "stem": "ما دور dependency array في useEffect hook؟",
+          "options": [
+            "لا يوجد لها أي تأثير حقيقي",
+            "التحكم في متى سيتم تشغيل effect بناءً على تغيير المتغيرات",
+            "لتحسين الأداء فقط، بدون تأثير على السلوك",
+            "لمنع component من الـ re-render"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management & Reactivity",
+          "level": 7,
+          "stem": "عند استخدام reducer pattern مع useReducer، ما الفائدة مقارنة بـ useState المتعدد؟",
+          "options": [
+            "useReducer أسرع دائماً في الأداء",
+            "useReducer توفر logic معقدة ومترابطة بشكل منظم وقابل للاختبار",
+            "useState و useReducer متطابقان تماماً",
+            "useReducer تعمل فقط مع asynchronous operations"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management & Reactivity",
+          "level": 9,
+          "stem": "في مكتبات State Management المتقدمة، ما الفرق بين shallow equality check و deep equality check؟",
+          "options": [
+            "ليس لهما فرق، الاسمان فقط للمرجعية",
+            "Shallow يقارن references فقط بينما deep يقارن القيم، مما يؤثر على re-render",
+            "Deep دائماً أسرع من shallow",
+            "Shallow يُستخدم فقط في Redux بينما deep في Context"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "CSS & Responsive Design",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Flexbox و Grid في CSS؟",
+          "options": [
+            "Flexbox و Grid متطابقان تماماً",
+            "Flexbox للعناصر بـ بعد واحد بينما Grid للعناصر بـ بعدين",
+            "Grid أسرع دائماً من Flexbox",
+            "Flexbox يعمل فقط مع الصور"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "CSS & Responsive Design",
+          "level": 4,
+          "stem": "ما الغرض من استخدام media queries في CSS؟",
+          "options": [
+            "لتطبيق أنماط مختلفة بناءً على حجم الشاشة أو الجهاز",
+            "لتسريع تحميل الصور",
+            "لإضافة animations تلقائية",
+            "لتقليل حجم ملف CSS النهائي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CSS & Responsive Design",
+          "level": 5,
+          "stem": "في Responsive Design، ما هي مشكلة استخدام fixed widths بدلاً من relative units؟",
+          "options": [
+            "لا توجد مشكلة، fixed widths أفضل",
+            "قد تسبب overflow على الأجهزة الصغيرة ولا تتكيف بشكل صحيح",
+            "fixed widths لا توجد في CSS الحديثة",
+            "relative units أبطأ في الأداء من fixed widths"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "CSS & Responsive Design",
+          "level": 7,
+          "stem": "ما الفرق بين margin و padding وكيف يؤثران على box model؟",
+          "options": [
+            "margin و padding متطابقان تماماً",
+            "Margin خارج العنصر يؤثر على المسافة من عناصر أخرى، padding داخل العنصر",
+            "Padding لا تؤثر على الـ layout، هي فقط للتصميم",
+            "Margin يُستخدم فقط للعناصر الكبيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "CSS & Responsive Design",
+          "level": 9,
+          "stem": "عند إنشاء responsive typography، ما الأفضل بين px و rem و em؟",
+          "options": [
+            "px دائماً الخيار الأفضل لأنها ثابتة",
+            "rem توفر المرونة والتحكم الكامل مع قابلية الصيانة، بينما em تعتمد على parent size",
+            "em و rem متطابقة تماماً ولا فرق بينهما",
+            "يجب استخدام px فقط للعناصر الصغيرة و rem للكبيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Integration & Async Programming",
+          "level": 2,
+          "stem": "ما هو الهدف الأساسي من استخدام async/await في JavaScript؟",
+          "options": [
+            "لتسريع execution speed للكود",
+            "لكتابة asynchronous code بطريقة تبدو synchronous",
+            "لحذف المتغيرات من الـ memory",
+            "لتقليل حجم التطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Integration & Async Programming",
+          "level": 4,
+          "stem": "ما الفرق بين Promises و async/await؟",
+          "options": [
+            "Promises و async/await متطابقة تماماً",
+            "async/await هي طريقة حديثة وأسهل لقراءة code مبني على Promises",
+            "Promises أسرع من async/await",
+            "async/await تعمل فقط مع fetch API"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Integration & Async Programming",
+          "level": 5,
+          "stem": "عند استدعاء API في useEffect، ما المشكلة المحتملة إذا لم تتعامل مع cleanup؟",
+          "options": [
+            "لا توجد مشكلة، cleanup اختياري تماماً",
+            "قد تحدث memory leaks وـ race conditions عند unmount أو re-render",
+            "هذا يسبب تقليل الأداء فقط",
+            "Browser سيغلق تلقائياً الـ connection"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Integration & Async Programming",
+          "level": 7,
+          "stem": "عند معالجة multiple async requests متوازي، ما الفرق بين Promise.all و Promise.allSettled؟",
+          "options": [
+            "كلاهما متطابق في السلوك",
+            "Promise.all يرفع error إذا فشل أي request، بينما allSettled تنتظر الكل وتعيد النتائج",
+            "Promise.allSettled أسرع دائماً من Promise.all",
+            "Promise.all يعمل فقط مع JSON APIs"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Integration & Async Programming",
+          "level": 9,
+          "stem": "عند تطبيق request cancellation pattern مع AbortController، ما الحالة التي تحتاج عناية خاصة؟",
+          "options": [
+            "AbortController تلغي جميع العمليات تلقائياً دون الحاجة لمراقبة",
+            "يجب تنظيف AbortController في cleanup function لتجنب memory leaks عند component unmount",
+            "AbortController لا توجد في modern browsers",
+            "يجب استخدام AbortController مع كل single request حتى لو لم تكن متوازية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Web Performance & Optimization",
+          "level": 2,
+          "stem": "ما هو الغرض من استخدام lazy loading في تطبيقات الويب؟",
+          "options": [
+            "لتقليل نوعية الصور المعروضة",
+            "لتأخير تحميل الموارد حتى تصبح مطلوبة فعلاً",
+            "لإضافة animations للصور",
+            "لحذف الصور من DOM"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Web Performance & Optimization",
+          "level": 4,
+          "stem": "ما الفرق بين code splitting و tree shaking في optimization؟",
+          "options": [
+            "كلاهما نفس الشيء بأسماء مختلفة",
+            "Code splitting تقسم الكود إلى chunks، tree shaking تزيل الكود غير المستخدم",
+            "Tree shaking فقط للـ CSS والصور",
+            "Code splitting يزيد حجم البundle"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Web Performance & Optimization",
+          "level": 5,
+          "stem": "متى تستخدم React.lazy و Suspense لتحسين الأداء؟",
+          "options": [
+            "لجميع components دون استثناء",
+            "للـ components الكبيرة التي لا تُحمل في الطلب الأولي للصفحة",
+            "فقط للـ API requests",
+            "React.lazy و Suspense متوقفة عن الاستخدام"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Web Performance & Optimization",
+          "level": 7,
+          "stem": "ما تأثير استخدام large dependencies على bundle size وكيف تختار dependencies بحكمة؟",
+          "options": [
+            "حجم dependency لا يهم، الأداء تتحدد بـ hardware فقط",
+            "يجب اختيار alternatives أخف وزناً وقياس impact على bundle ومراقبة dependencies",
+            "كل dependencies تزيد حجم الـ bundle بالتساوي",
+            "يجب استخدام جميع dependencies حتى لو كانت كبيرة الحجم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Web Performance & Optimization",
+          "level": 9,
+          "stem": "عند تطبيق caching strategy للـ assets، ما الفرق بين cache busting و service workers؟",
+          "options": [
+            "كلاهما نفس الشيء",
+            "Cache busting تضيف hash للـ filenames لتجنب stale cache، service workers توفر offline support وcaching متقدمة",
+            "Service workers قديمة ولا تُستخدم بعد الآن",
+            "Cache busting أسرع من service workers دائماً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing, Debugging & DevTools",
+          "level": 2,
+          "stem": "ما الفرق بين unit testing و integration testing؟",
+          "options": [
+            "كلاهما متطابقان تماماً",
+            "Unit testing تختبر وحدة واحدة، integration testing تختبر تفاعل multiple units معاً",
+            "Integration testing أسرع من unit testing",
+            "Unit testing لا توجد في modern development"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing, Debugging & DevTools",
+          "level": 4,
+          "stem": "ما الهدف من استخدام mocking في unit tests؟",
+          "options": [
+            "لإزالة جميع الـ tests من المشروع",
+            "لاستبدال dependencies خارجية بـ fake objects للتحكم الكامل في السلوك",
+            "لزيادة سرعة تشغيل التطبيق الفعلي",
+            "لا توجد أهداف حقيقية للـ mocking"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing, Debugging & DevTools",
+          "level": 5,
+          "stem": "عند debugging في browser DevTools، ما الفائدة من استخدام breakpoints والـ watch expressions؟",
+          "options": [
+            "لا توجد فائدة حقيقية، logging أفضل دائماً",
+            "Breakpoints توقف execution وـ watch expressions تراقب قيم variables بالوقت الفعلي",
+            "هذه الأدوات تؤثر على performance النهائي للتطبيق",
+            "DevTools تعمل فقط مع التطبيقات البسيطة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing, Debugging & DevTools",
+          "level": 7,
+          "stem": "عند استخدام React DevTools extension، ما هي أفضل طريقة لتتبع unnecessary re-renders؟",
+          "options": [
+            "لا يوجد طريقة حقيقية لتتبع re-renders",
+            "استخدم Profiler tab لتسجيل render performance وتحديد الـ components التي تعيد render بدون سبب",
+            "React DevTools فقط لـ debugging syntax errors",
+            "Unnecessary re-renders لا يمكن تحديدها أو تحسينها"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing, Debugging & DevTools",
+          "level": 9,
+          "stem": "عند إنشاء comprehensive test suite، كيف تقرر على coverage percentage والـ testing strategy؟",
+          "options": [
+            "100% coverage دائماً ضروري وكافي لضمان quality",
+            "اختر target coverage بناءً على business risk وركز على critical paths، مع balance بين unit و integration tests",
+            "Testing مكلف جداً، skip it completely",
+            "Coverage percentage لا يؤثر على quality"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "role": "Full-Stack Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Frontend Development",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "Backend Development",
+          "importance": 9,
+          "startLevel": 4
+        },
+        {
+          "name": "Database Design and Management",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "API Design and Integration",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "System Architecture and Scalability",
+          "importance": 8,
+          "startLevel": 4
+        },
+        {
+          "name": "DevOps and Deployment",
+          "importance": 6,
+          "startLevel": 4
+        },
+        {
+          "name": "Testing and Code Quality",
+          "importance": 7,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Frontend Development",
+          "level": 2,
+          "stem": "ما هو الدور الأساسي لـ CSS في تطوير الويب؟",
+          "options": [
+            "معالجة منطق التطبيق والعمليات الحسابية",
+            "تصميم المظهر والأسلوب البصري للصفحة",
+            "إدارة قاعدة البيانات وتخزين المعلومات",
+            "التعامل مع الطلبات من الخادم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Frontend Development",
+          "level": 4,
+          "stem": "كيف يحسن async/await من قابلية قراءة الكود في JavaScript؟",
+          "options": [
+            "يقلل حجم الملف النهائي بشكل كبير",
+            "يسمح بكتابة كود غير متزامن بطريقة تبدو متزامنة وسهلة الفهم",
+            "يزيل الحاجة إلى استخدام Promises تماماً",
+            "يحسن سرعة التنفيذ ثلاث مرات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Frontend Development",
+          "level": 5,
+          "stem": "ما هو Virtual DOM في React وما فائدته الرئيسية؟",
+          "options": [
+            "نسخة مؤقتة في الذاكرة من DOM الفعلي تقلل عدد تحديثات DOM المباشرة",
+            "قاعدة بيانات تخزن جميع حالات المكون",
+            "آلية لتشفير البيانات المرسلة إلى الخادم",
+            "أداة لتصحيح الأخطاء في وقت التطوير"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Frontend Development",
+          "level": 7,
+          "stem": "ما هي المقارنة بين Client-Side Rendering و Server-Side Rendering من حيث الأداء والتجربة؟",
+          "options": [
+            "CSR أسرع في التحميل الأولي لكن SSR أفضل لـ SEO والصفحات الأولى",
+            "SSR دائماً أسرع من CSR في جميع الحالات",
+            "CSR لا يحتاج إلى خادم بينما SSR يتطلب خادم قوي",
+            "كلاهما متطابق في الأداء والتجربة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Frontend Development",
+          "level": 9,
+          "stem": "كيف تحسن حجم Bundle في تطبيق SPA كبير مع الحفاظ على الأداء والميزات؟",
+          "options": [
+            "حذف جميع التعليقات والمتغيرات غير المستخدمة فقط",
+            "استخدام Code Splitting و Lazy Loading و Tree Shaking مع ضغط الموارد",
+            "إعادة كتابة التطبيق بلغة برمجية أخرى",
+            "تقليل عدد الصفحات المتاحة في التطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Development",
+          "level": 2,
+          "stem": "ما هو الدور الأساسي للخادم Backend في التطبيق؟",
+          "options": [
+            "عرض واجهة المستخدم الرسومية",
+            "معالجة الطلبات وتخزين البيانات وتطبيق الأعمال الحسابية",
+            "تصميم شكل الصفحات",
+            "إدارة ألوان الزر والخطوط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Development",
+          "level": 4,
+          "stem": "ما هو Middleware في Express.js وما وظيفته؟",
+          "options": [
+            "قاعدة بيانات وسيطة بين التطبيق والعميل",
+            "دالة تعالج الطلب والاستجابة وتمرر التحكم للدالة التالية",
+            "أداة لضغط الملفات تلقائياً",
+            "نوع من قواعد firewall الأمنية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Development",
+          "level": 5,
+          "stem": "كيف تحسن Connection Pools أداء الاتصال بقاعدة البيانات؟",
+          "options": [
+            "بإعادة استخدام الاتصالات الموجودة بدلاً من إنشاء اتصالات جديدة في كل مرة",
+            "بتشفير جميع البيانات المرسلة",
+            "بتقليل عدد الصفوف المسترجعة من الاستعلام",
+            "بحذف البيانات القديمة تلقائياً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Backend Development",
+          "level": 7,
+          "stem": "ما هي المقارنة بين Monolithic و Microservices من حيث المرونة والتعقيد؟",
+          "options": [
+            "Monolithic أسهل في البداية لكن Microservices أكثر مرونة مع تعقيد أكبر",
+            "Microservices أفضل دائماً وأسهل من Monolithic",
+            "كلاهما متساوي تماماً في التعقيد",
+            "Monolithic الخيار الوحيد للتطبيقات الكبيرة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Backend Development",
+          "level": 9,
+          "stem": "كيف تتعامل مع Distributed Transactions عبر خدمات متعددة بشكل فعال؟",
+          "options": [
+            "استخدام ACID transactions مباشرة عبر جميع الخدمات",
+            "استخدام Saga Pattern أو Event Sourcing للتعامل مع التناسق النهائي",
+            "دمج جميع الخدمات في خادم واحد",
+            "تجاهل مشكلة التناسق في البيانات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Management",
+          "level": 2,
+          "stem": "ما هو Primary Key في قاعدة البيانات؟",
+          "options": [
+            "المفتاح الذي يفتح قاعدة البيانات",
+            "معرف فريد يحدد كل صف بشكل لا يقبل التكرار",
+            "أول عمود في الجدول",
+            "كلمة السر لدخول قاعدة البيانات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Database Design and Management",
+          "level": 4,
+          "stem": "ما هو Normalization في تصميم قاعدة البيانات؟",
+          "options": [
+            "عملية تحويل البيانات إلى صيغة موحدة لتقليل التكرار والتأكد من تناسق البيانات",
+            "حذف جميع البيانات القديمة",
+            "دمج جميع الجداول في جدول واحد",
+            "إضافة تشفير لجميع الحقول"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Database Design and Management",
+          "level": 5,
+          "stem": "ما هو Indexing وكيف يحسن أداء البحث في قاعدة البيانات؟",
+          "options": [
+            "إنشاء بنية بيانات منظمة تسرع البحث عن القيم دون فحص جميع الصفوف",
+            "فرز البيانات أبجدياً فقط",
+            "إنشاء نسخ احتياطية إضافية من الجداول",
+            "حذف الحقول الفارغة تلقائياً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Database Design and Management",
+          "level": 7,
+          "stem": "ما هي المقارنة بين قواعد البيانات Relational و NoSQL من حيث البنية والاستخدام؟",
+          "options": [
+            "Relational للبيانات المنظمة و NoSQL للبيانات غير المنظمة وأكثر مرونة",
+            "NoSQL أفضل دائماً من Relational",
+            "كلاهما متطابق تماماً في الأداء",
+            "Relational الخيار الوحيد للتطبيقات الحديثة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Database Design and Management",
+          "level": 9,
+          "stem": "كيف تصمم قاعدة بيانات لتحقيق أداء استعلام أمثل في سيناريوهات معقدة؟",
+          "options": [
+            "إضافة مزيد من الفهارس لكل حقل",
+            "تحليل patterns الاستعلام واستخدام Denormalization و Indexing و Partitioning بذكاء",
+            "تخزين جميع البيانات في ملف نصي",
+            "عدم استخدام Joins إطلاقاً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Integration",
+          "level": 2,
+          "stem": "ماذا يرمز اختصار REST في تصميم الواجهات البرمجية؟",
+          "options": [
+            "Remote Equipment Support Transfer",
+            "Representational State Transfer",
+            "Request Execution and Storage Technology",
+            "Real-time Efficient System Tools"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Integration",
+          "level": 4,
+          "stem": "ما هو الغرض من HTTP Status Codes في الاستجابة؟",
+          "options": [
+            "تحديد سرعة الاتصال بالإنترنت",
+            "إخبار العميل بحالة الطلب مثل النجاح أو الفشل أو المشاكل",
+            "تشفير البيانات المرسلة",
+            "إدارة جلسات المستخدم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Integration",
+          "level": 5,
+          "stem": "ما الفرق بين REST و GraphQL من حيث الاستعلام والمرونة؟",
+          "options": [
+            "REST يوفر مرونة أكثر في اختيار البيانات المطلوبة بينما GraphQL نقطة نهاية ثابتة",
+            "GraphQL يسمح بطلب البيانات المحددة فقط بينما REST يعيد كل البيانات",
+            "كلاهما متطابق تماماً",
+            "REST أسرع دائماً من GraphQL"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Integration",
+          "level": 7,
+          "stem": "كيف تتعامل مع API Versioning عند تطور الواجهة البرمجية؟",
+          "options": [
+            "لا تقلق بشأن الإصدارات وغير الواجهة مباشرة",
+            "استخدم URL versioning أو Header versioning للحفاظ على التوافقية مع الإصدارات القديمة",
+            "أعد بناء الواجهة بالكامل في كل تحديث",
+            "اطلب من العملاء التحديث الفوري"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "API Design and Integration",
+          "level": 9,
+          "stem": "كيف تصمم APIs قوية تتعامل مع التناسق النهائي والعمليات غير المتزامنة؟",
+          "options": [
+            "استخدام Response Codes الفوري فقط",
+            "استخدام Webhooks و Callbacks و Long-Polling مع Retry Logic وIdempotent Operations",
+            "إجبار المتزامنة في جميع الحالات",
+            "تجاهل المشاكل المحتملة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 2,
+          "stem": "ما هي Scalability في تصميم النظام؟",
+          "options": [
+            "القدرة على تغيير لون واجهة المستخدم",
+            "قدرة النظام على التعامل مع زيادة الحمل والمستخدمين دون انهيار الأداء",
+            "عدد الخوادم المستخدمة",
+            "سرعة الانترنت المتاحة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 4,
+          "stem": "ما هي Caching وكيف تحسن أداء النظام؟",
+          "options": [
+            "حذف البيانات غير الضرورية",
+            "تخزين مؤقت للبيانات المستخدمة بكثرة لتسريع الوصول إليها",
+            "نسخ احتياطي من قاعدة البيانات",
+            "طريقة لتشفير المعلومات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 5,
+          "stem": "ما هو Load Balancing ولماذا هو مهم في النظم الموزعة؟",
+          "options": [
+            "توازن أوزان قاعدة البيانات",
+            "توزيع الطلبات بالتساوي على عدة خوادم لتجنب إرهاق خادم واحد",
+            "حساب استهلاك الذاكرة فقط",
+            "تقسيم البيانات إلى أجزاء صغيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 7,
+          "stem": "ما هي مميزات وعيوب Horizontal Scaling مقارنة بـ Vertical Scaling؟",
+          "options": [
+            "Horizontal أرخص وأكثر مرونة لكن معقد في الإدارة بينما Vertical أسهل لكن محدود",
+            "Vertical أفضل دائماً من Horizontal",
+            "كلاهما متساوي تماماً",
+            "Horizontal يزيد سعر الأجهزة فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "System Architecture and Scalability",
+          "level": 9,
+          "stem": "كيف تصمم نظام يتعامل مع ملايين المستخدمين المتزامنين بكفاءة؟",
+          "options": [
+            "شراء جهاز كمبيوتر واحد قوي جداً",
+            "استخدام Load Balancing و Caching و Database Replication و Microservices مع Async Processing",
+            "تقليل عدد الميزات في التطبيق",
+            "قبول تأخر كبير في الاستجابة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps and Deployment",
+          "level": 2,
+          "stem": "ماذا يرمز اختصار CI/CD في عملية التطوير؟",
+          "options": [
+            "Custom Input and Code Debugging",
+            "Continuous Integration and Continuous Deployment",
+            "Computer Infrastructure Configuration",
+            "Cloud Integration and Database"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps and Deployment",
+          "level": 4,
+          "stem": "ما هو Docker وكيف يساعد في عملية النشر؟",
+          "options": [
+            "برنامج لتحرير ملفات PDF",
+            "أداة لحزم التطبيق وتبعياته في حاوية معزولة لضمان تشغيله بنفس الطريقة في أي بيئة",
+            "خدمة لإرسال البريد الإلكتروني",
+            "برنامج لتصميم الرسومات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps and Deployment",
+          "level": 5,
+          "stem": "ما هي Containerization وما فوائدها مقارنة بالنشر التقليدي؟",
+          "options": [
+            "تخزين البيانات في صناديق فيزيائية",
+            "حزم التطبيق والمكتبات المطلوبة معاً مما يسهل النشر ويقلل مشاكل التوافقية",
+            "شراء خوادم من شركات متعددة",
+            "تثبيت نفس البرنامج على عدة أجهزة يدوياً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps and Deployment",
+          "level": 7,
+          "stem": "ما هي المقارنة بين Deployment Strategies المختلفة من حيث المخاطر والتأثير؟",
+          "options": [
+            "جميع الاستراتيجيات متطابقة في المخاطر",
+            "Blue-Green و Canary و Rolling أقل خطورة من Big Bang لكنها أكثر تعقيداً",
+            "Big Bang الطريقة الأفضل دائماً",
+            "لا فرق بين الاستراتيجيات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "DevOps and Deployment",
+          "level": 9,
+          "stem": "كيف تطبق Blue-Green Deployment لضمان عدم توقف الخدمة؟",
+          "options": [
+            "إيقاف النظام بالكامل ثم النشر",
+            "تشغيل بيئتين متطابقتين وتبديل حركة المستخدمين من Blue إلى Green بدون تأثر الخدمة",
+            "نشر النسخة الجديدة على بعض الخوادم فقط",
+            "انتظار جميع المستخدمين لإغلاق الاتصال ثم النشر"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 2,
+          "stem": "ما هو Unit Testing وما أهميته؟",
+          "options": [
+            "اختبار النظام بالكامل من البداية للنهاية",
+            "اختبار أجزاء صغيرة من الكود بمعزل لتأكد من عملها بشكل صحيح",
+            "اختبار الواجهة الرسومية فقط",
+            "اختبار سرعة الخادم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 4,
+          "stem": "ما هو Mocking في الاختبارات وما فائدته؟",
+          "options": [
+            "السخرية من الكود المكتوب",
+            "استبدال أجزاء حقيقية بنسخ مزيفة للتحكم في السلوك والاعتماديات أثناء الاختبار",
+            "حذف جميع الدوال من الاختبار",
+            "ضرب الخادم بطلبات عشوائية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 5,
+          "stem": "ما هي Code Coverage وكيف تقيس جودة الاختبارات؟",
+          "options": [
+            "عدد الأسطر البرمجية في المشروع",
+            "نسبة الكود الذي يتم تنفيذه خلال الاختبارات وتشير إلى مدى فعالية الاختبارات",
+            "عدد المرات التي تم تشغيل البرنامج",
+            "حجم ملفات الاختبار"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 7,
+          "stem": "ما هي المقارنة بين Unit Testing و Integration Testing من حيث النطاق والفائدة؟",
+          "options": [
+            "Unit Testing يختبر الأجزاء منفصلة بينما Integration Testing يختبر تفاعل عدة أجزاء معاً",
+            "Integration Testing أسرع وأرخص من Unit Testing",
+            "كلاهما متطابق تماماً",
+            "Unit Testing غير مهم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Testing and Code Quality",
+          "level": 9,
+          "stem": "كيف تضمن موثوقية الاختبارات وتمنع Flaky Tests التي قد تفشل بشكل عشوائي؟",
+          "options": [
+            "تجاهل الاختبارات غير المستقرة",
+            "استخدام Deterministic Testing و Isolation و Retry Logic و Monitoring مع عدم الاعتماد على التوقيت",
+            "تشغيل الاختبارات مرة واحدة فقط",
+            "زيادة قيمة timeout بشكل كبير"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "role": "Mobile Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "iOS and Android Platform Development",
+          "importance": 250,
+          "startLevel": 4
+        },
+        {
+          "name": "Mobile UI Implementation and Layout Systems",
+          "importance": 200,
+          "startLevel": 4
+        },
+        {
+          "name": "Mobile Performance Optimization and Memory Management",
+          "importance": 180,
+          "startLevel": 4
+        },
+        {
+          "name": "State Management and App Architecture Patterns",
+          "importance": 200,
+          "startLevel": 4
+        },
+        {
+          "name": "Mobile Testing, Debugging, and Quality Assurance",
+          "importance": 150,
+          "startLevel": 4
+        },
+        {
+          "name": "Backend Integration, APIs, and Data Persistence",
+          "importance": 160,
+          "startLevel": 4
+        },
+        {
+          "name": "Mobile Security and Privacy Best Practices",
+          "importance": 140,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "iOS and Android Platform Development",
+          "level": 2,
+          "stem": "ما هي الحد الأدنى من إصدار الأجهزة التي تحتاج عادة إلى دعمها عند تطوير تطبيق iOS عام؟",
+          "options": [
+            "iOS 8 أو أحدث",
+            "iOS 12 أو أحدث",
+            "iOS 14 أو أحدث",
+            "iOS 16 أو أحدث"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "iOS and Android Platform Development",
+          "level": 4,
+          "stem": "كيف يختلف التعامل مع دورة حياة التطبيق (lifecycle) بين Android و iOS؟",
+          "options": [
+            "iOS يستخدم AppDelegate بينما Android يستخدم Activity lifecycle callbacks",
+            "كلا النظامين لديهما نفس طريقة معالجة lifecycle",
+            "Android فقط لديه دورة حياة محددة",
+            "iOS يستخدم Intent-based lifecycle system"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "iOS and Android Platform Development",
+          "level": 5,
+          "stem": "في Android، ما الفرق الرئيسي بين Fragment و Activity من حيث المرونة والإعادة الاستخدام؟",
+          "options": [
+            "Fragment يمكنه أن يعيش بشكل مستقل دون Activity",
+            "Fragment عبارة عن مكون قابل لإعادة الاستخدام يمكن دمجه في عدة Activities",
+            "Activity أسهل من Fragment ولا توجد فائدة لاستخدام Fragments",
+            "Fragments تُستخدم فقط للألعاب وليس للتطبيقات العادية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "iOS and Android Platform Development",
+          "level": 7,
+          "stem": "ما هي أفضل ممارسة عند التعامل مع فقدان الذاكرة (memory pressure) على iOS عندما يستدعي النظام didReceiveMemoryWarning؟",
+          "options": [
+            "تجاهل التحذير لأنه نادرا ما يؤدي إلى حقيقة",
+            "تحرير الموارد المخزنة مؤقتا والصور والبيانات التي يمكن إعادة تحميلها",
+            "إنهاء التطبيق فورا لتجنب أي مشاكل أخرى",
+            "فقط تقليل حجم قائمة الانتظار في background"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "iOS and Android Platform Development",
+          "level": 9,
+          "stem": "عند تطوير تطبيق متطلب من الناحية الحسابية، كيف تختلف استراتيجيات التطوير الأمثل بين iOS (باستخدام GCD) و Android (باستخدام Coroutines)؟",
+          "options": [
+            "كلاهما متطابق تماما، لا فرق في الأداء أو الاستخدام",
+            "iOS GCD هو callback-based بينما Kotlin Coroutines تستخدم suspend functions - Coroutines أكثر كفاءة في معالجة آلاف المهام المتزامنة",
+            "Android Coroutines أبطأ بكثير من GCD",
+            "GCD تدير الخيوط تلقائيا بينما Coroutines تتطلب إدارة يدوية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile UI Implementation and Layout Systems",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Auto Layout على iOS و ConstraintLayout على Android؟",
+          "options": [
+            "كلاهما نفس الشيء تماما",
+            "Auto Layout يستخدم Storyboards فقط بينما ConstraintLayout يستخدم XML",
+            "كلاهما أنظمة لتحديد موضع وحجم العناصر بناء على علاقات وقيود",
+            "Auto Layout للصور فقط و ConstraintLayout للنصوص فقط"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Mobile UI Implementation and Layout Systems",
+          "level": 4,
+          "stem": "في SwiftUI، ماذا يحدث عندما تستخدم .frame() مع .padding() على نفس الـ View؟",
+          "options": [
+            ".padding() يتم تطبيقه قبل .frame()، لذا يؤثر على الحجم المحدد",
+            ".frame() يتم تطبيقه أولا، ثم .padding() يضيف مساحة خارج الإطار",
+            "لا فرق في ترتيب التطبيق",
+            ".padding() يلغي .frame() دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile UI Implementation and Layout Systems",
+          "level": 5,
+          "stem": "عند استخدام Jetpack Compose، ما الفرق بين معدل الإعادة (recomposition) الكامل والجزئي عند تغيير الحالة؟",
+          "options": [
+            "Compose يعيد تجميع جميع الـ Composables في كل مرة",
+            "Compose يحاول إعادة تجميع فقط الـ Composables التي تعتمد على الحالة المتغيرة",
+            "لا يوجد فرق بين الاثنين",
+            "المعالج (compiler) يقرر تلقائيا وليس لديك حكم عليه"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile UI Implementation and Layout Systems",
+          "level": 7,
+          "stem": "عند التعامل مع قوائم كبيرة جدا (الآلاف من العناصر)، لماذا يكون RecyclerView على Android أفضل من ListView من حيث الأداء والذاكرة؟",
+          "options": [
+            "ListView يستخدم نفس آلية إعادة الاستخدام",
+            "RecyclerView يعيد استخدام الـ ViewHolders وله فصل واضح بين المنطق والعرض",
+            "ListView أسرع من RecyclerView",
+            "RecyclerView يحمل جميع العناصر في الذاكرة دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile UI Implementation and Layout Systems",
+          "level": 9,
+          "stem": "في SwiftUI، عند استخدام .onPreferenceChange() مع Custom Preference Keys، كيف تختلف كفاءة هذا النهج عن الاستعلام المباشر عن القيم من الـ child views؟",
+          "options": [
+            "كلاهما متطابق في الأداء",
+            "Custom Preference Keys توفر نهج reactive يقلل من عدد المرات التي يحتاج فيها الـ parent للاستعلام عن القيم",
+            "الاستعلام المباشر أسرع دائما",
+            "Custom Preference Keys تسبب دائما تأخر في الأداء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Performance Optimization and Memory Management",
+          "level": 2,
+          "stem": "ما هي المشكلة الرئيسية التي تسبب تسرب الذاكرة (memory leak) على iOS؟",
+          "options": [
+            "استخدام الكثير من الـ strings",
+            "إنشاء مراجع دائرية قوية (strong reference cycles)",
+            "استخدام الألوان المتعددة",
+            "تنزيل الملفات من الإنترنت"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Performance Optimization and Memory Management",
+          "level": 4,
+          "stem": "في Android، ما هو الفرق بين onDestroy() و onTrimMemory() من حيث متى يتم استدعاؤهما؟",
+          "options": [
+            "كلاهما يستدعى في نفس الوقت",
+            "onDestroy يستدعى عندما تُغلق Activity بينما onTrimMemory قد يُستدعى عندما يكون النظام بحاجة إلى تحرير الذاكرة",
+            "onTrimMemory يستدعى أولا دائما",
+            "onDestroy لا يستدعى أبدا في تطبيقات حقيقية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Performance Optimization and Memory Management",
+          "level": 5,
+          "stem": "ما هي أفضل ممارسة لتحسين أداء تحميل الصور الكبيرة في التطبيقات المحمولة؟",
+          "options": [
+            "تحميل الصور بحجمها الأصلي دائما",
+            "تحميل الصور بـ مؤشرات ترتيب (progressive loading) والتخزين المؤقت (caching) وتقليل حجمها قبل العرض",
+            "استخدام صيغة PNG فقط",
+            "عدم تحميل صور على الإطلاق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Performance Optimization and Memory Management",
+          "level": 7,
+          "stem": "عند استخدام Background Fetch على iOS، ما الذي يجب أخذه في الاعتبار لتحسين استهلاك البطارية والأداء؟",
+          "options": [
+            "استدعاء Background Fetch كل 5 دقائق بدون شروط",
+            "تحديد الفترات الزمنية بناء على نمط استخدام المستخدم وتجنب المعالجة غير الضرورية",
+            "Background Fetch لا يؤثر على استهلاك البطارية",
+            "استخدام Background Fetch لجميع المهام"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Performance Optimization and Memory Management",
+          "level": 9,
+          "stem": "في Kotlin/Android، عند استخدام inline functions وreified type parameters، كيف يؤثر هذا على الأداء والحجم النهائي للـ APK؟",
+          "options": [
+            "Inline functions تقلل حجم APK وتحسن الأداء دائما",
+            "Inline functions توفر مرونة مع type information أثناء التنفيذ، لكن قد تزيد حجم APK إذا تم الإفراط في استخدامها",
+            "Inline functions ليس لها أي تأثير على الأداء أو الحجم",
+            "Reified type parameters أبطأ بكثير من العكس"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management and App Architecture Patterns",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين MVVM و MVC من حيث المسؤولية عن معالجة الحالة؟",
+          "options": [
+            "لا يوجد فرق",
+            "في MVVM، ViewModel تحتفظ بالحالة، بينما في MVC تحتفظ بها Model",
+            "كلاهما متطابق تماما",
+            "MVC أفضل من MVVM"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management and App Architecture Patterns",
+          "level": 4,
+          "stem": "في Redux pattern على React Native، ما هو دور Reducer والفرق بينه وبين Action؟",
+          "options": [
+            "Action و Reducer نفس الشيء",
+            "Action تصف ما يجب أن يحدث، و Reducer تحدد كيف تتغير الحالة نتيجة لذلك",
+            "Reducer ترسل الإجراءات و Action تستقبلها",
+            "كلاهما يعمل مع الواجهة مباشرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management and App Architecture Patterns",
+          "level": 5,
+          "stem": "ما هي المشكلة الرئيسية التي يحلها ViewModel Pattern في Android Architecture Components؟",
+          "options": [
+            "فقط لجعل الكود أطول",
+            "الحفاظ على الحالة عند تدوير الجهاز وفصل منطق العرض عن Activity",
+            "جعل تطبيقات Android بطيئة",
+            "إزالة الحاجة إلى المتغيرات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management and App Architecture Patterns",
+          "level": 7,
+          "stem": "عند استخدام MobX لإدارة الحالة، كيف تختلف الأداء عند استخدام @observable و @computed مقابل Redux؟",
+          "options": [
+            "كلاهما متطابق في الأداء",
+            "MobX يستخدم reactive tracking فقط يعيد تحديث المكونات التي تعتمد على بيانات محددة، بينما Redux يتطلب قيودا أكثر",
+            "Redux أسرع بكثير من MobX",
+            "MobX يحتاج إلى إعادة تحديث كاملة في كل مرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "State Management and App Architecture Patterns",
+          "level": 9,
+          "stem": "في معمارية تطبيق معقد يستخدم Clean Architecture، ما الفرق بين الـ Use Cases والـ Repositories من حيث المسؤولية والفصل بين الطبقات؟",
+          "options": [
+            "كلاهما نفس الشيء ولا فرق",
+            "Repositories تتعامل مع جلب البيانات من مصادر متعددة، بينما Use Cases تحتوي على منطق الأعمال المحدد والتفاعل بين Repositories",
+            "Use Cases قديمة والمشروع الحديث لا يستخدمها",
+            "Repositories فقط للبيانات من قاعدة البيانات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Testing, Debugging, and Quality Assurance",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Unit Testing و Integration Testing؟",
+          "options": [
+            "لا يوجد فرق",
+            "Unit Testing يختبر مكون واحد في عزلة، بينما Integration Testing يختبر مكونات متعددة معا",
+            "Integration Testing أسهل من Unit Testing",
+            "Unit Testing يختبر البيانات فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Testing, Debugging, and Quality Assurance",
+          "level": 4,
+          "stem": "في iOS، ما هو الفرق بين استخدام XCTest و اختبار واجهة المستخدم (UI Testing)؟",
+          "options": [
+            "كلاهما نفس الشيء",
+            "XCTest يختبر الأكواد مباشرة، بينما UI Testing تحاكي تفاعلات المستخدم الفعلية مع الواجهة",
+            "UI Testing أسرع من XCTest",
+            "XCTest فقط للألعاب"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Testing, Debugging, and Quality Assurance",
+          "level": 5,
+          "stem": "عند استخدام Mockito أو مشابهاتها في اختبار مكون يعتمد على نداء API، ما فائدة Mocking البيانات؟",
+          "options": [
+            "لا فائدة من Mocking",
+            "تجنب استدعاءات الشبكة الفعلية وجعل الاختبار أسرع وأكثر موثوقية وسهولة",
+            "جعل الاختبار أبطأ",
+            "Mocking يزيد من تعقيد الكود فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Testing, Debugging, and Quality Assurance",
+          "level": 7,
+          "stem": "عند استخدام Android Espresso للاختبار، ما الفرق بين onView و onData من حيث الاستخدام والأداء؟",
+          "options": [
+            "كلاهما متطابق",
+            "onView يُستخدم للعناصر الثابتة، بينما onData يُستخدم للعناصر ديناميكية في AdapterViews مثل ListView",
+            "onData أسرع دائما",
+            "onView يستخدم فقط للأزرار"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Testing, Debugging, and Quality Assurance",
+          "level": 9,
+          "stem": "عند تتبع المشكلات المعقدة في تطبيق متعدد الخيوط (multi-threaded)، ما الاستراتيجية الأمثل لجمع المعلومات والتصحيح دون التأثير على الأداء بشكل كبير؟",
+          "options": [
+            "إضافة طباعة (print) في كل مكان في الكود",
+            "استخدام profilers و debuggers مع Conditional Breakpoints وتتبع الخيوط المحددة",
+            "تجاهل المشكلة",
+            "حذف جميع الخيوط استخدام single thread"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Integration, APIs, and Data Persistence",
+          "level": 2,
+          "stem": "ما هي أنواع الطلبات HTTP الشائعة عند بناء API للتطبيقات المحمولة؟",
+          "options": [
+            "فقط GET",
+            "GET و POST فقط",
+            "GET, POST, PUT, DELETE وغيرها",
+            "HTTP ليست ضرورية للتطبيقات المحمولة"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Backend Integration, APIs, and Data Persistence",
+          "level": 4,
+          "stem": "في Retrofit على Android، ما الفرق بين @Body و @Field في تمرير البيانات إلى API؟",
+          "options": [
+            "كلاهما متطابق",
+            "@Body يرسل JSON كاملا، بينما @Field يرسل بيانات مصفوفة من القيم",
+            "@Field أكثر أمانا من @Body",
+            "كلاهما يستخدم نفس الصيغة فقط الاسم مختلف"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Integration, APIs, and Data Persistence",
+          "level": 5,
+          "stem": "ما هي الطريقة الأفضل للتعامل مع الأخطاء والاتصالات غير الموثوقة في التطبيقات المحمولة؟",
+          "options": [
+            "تجاهل الأخطاء والمتابعة",
+            "استخدام Retry Logic مع Exponential Backoff و Local Caching",
+            "إعادة المحاولة الفورية في حلقة (loop)",
+            "عدم الاتصال بالشبكة إطلاقا"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Integration, APIs, and Data Persistence",
+          "level": 7,
+          "stem": "عند استخدام Room Database على Android مع LiveData، كيف يختلف هذا النهج عن استخدام قاعدة بيانات تقليدية SQLite مباشرة؟",
+          "options": [
+            "لا يوجد فرق",
+            "Room يوفر طبقة تجريد مع فحص محترف في وقت الترجمة وتكامل LiveData للتحديثات التفاعلية",
+            "SQLite أسرع من Room",
+            "Room فقط للبيانات الكبيرة جدا"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Backend Integration, APIs, and Data Persistence",
+          "level": 9,
+          "stem": "عند تصميم استراتيجية Sync بين التطبيق المحمول والـ Backend، كيف تختلف نهج Pull (الجلب) عن Push (الدفع) من حيث استهلاك البطارية والموثوقية؟",
+          "options": [
+            "كلاهما متطابق تماما",
+            "Pull يستهلك بطارية أكثر لكنه يسيطر على التطبيق، بينما Push أكثر كفاءة لكن يعتمد على خدمة الدفع",
+            "Push دائما أسرع",
+            "Pull هو الطريقة الوحيدة الموثوقة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Security and Privacy Best Practices",
+          "level": 2,
+          "stem": "لماذا من المهم عدم تخزين كلمات المرور بصيغة نصية عادية على الجهاز المحمول؟",
+          "options": [
+            "لا يوجد سبب",
+            "إذا تم الوصول إلى الجهاز، يمكن قراءة الكلمات المرور مباشرة",
+            "النص العادي يشغل مساحة أكثر",
+            "كلمات المرور العادية بطيئة جدا"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Security and Privacy Best Practices",
+          "level": 4,
+          "stem": "على iOS، ما هي الطريقة الآمنة لتخزين البيانات الحساسة مثل التوكنات؟",
+          "options": [
+            "تخزينها في UserDefaults",
+            "تخزينها في Keychain، وهي درع أمان متخصص للبيانات الحساسة",
+            "تخزينها في ملف نصي",
+            "تخزينها في الذاكرة فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Security and Privacy Best Practices",
+          "level": 5,
+          "stem": "ما هو الفرق بين HTTPS و HTTP من حيث الأمان عند نقل البيانات الحساسة على الشبكة؟",
+          "options": [
+            "لا يوجد فرق",
+            "HTTPS تشفر البيانات أثناء النقل بينما HTTP ترسلها بدون تشفير",
+            "HTTP أسرع من HTTPS",
+            "HTTPS تستخدم فقط للصفحات العامة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Security and Privacy Best Practices",
+          "level": 7,
+          "stem": "عند طلب أذونات من المستخدم على Android 6.0 وما فوق، ما الفرق بين Compile Time Permissions و Runtime Permissions وأثرها على الأمان؟",
+          "options": [
+            "كلاهما نفس الشيء",
+            "Compile Time Permissions تُعلن في Manifest فقط، بينما Runtime Permissions تطلب الموافقة أثناء التشغيل، مما يوفر تحكما أفضل للمستخدم",
+            "Runtime Permissions أقل أمانا",
+            "يمكن تجاهل الأذونات تماما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Mobile Security and Privacy Best Practices",
+          "level": 9,
+          "stem": "عند بناء تطبيق يتعامل مع بيانات طبية أو مالية حساسة جدا، ما الاستراتيجية الشاملة للحماية من حيث التشفير والتحقق وتخزين البيانات؟",
+          "options": [
+            "التشفير وحده كافٍ",
+            "دمج التشفير End-to-End و Certificate Pinning و التحقق من صحة SSL/TLS و Secure Storage و التشفير في الراحة",
+            "عدم تخزين البيانات على الإطلاق",
+            "فقط السماح للاتصالات المحلية"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "role": "DevOps Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Infrastructure as Code and Configuration Management",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "Container Orchestration with Kubernetes",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "CI/CD Pipeline Design and Implementation",
+          "importance": 130,
+          "startLevel": 4
+        },
+        {
+          "name": "Cloud Platforms and Services",
+          "importance": 120,
+          "startLevel": 4
+        },
+        {
+          "name": "Monitoring, Logging, and Observability",
+          "importance": 120,
+          "startLevel": 4
+        },
+        {
+          "name": "Linux System Administration and Scripting",
+          "importance": 110,
+          "startLevel": 5
+        },
+        {
+          "name": "Incident Response and Production Troubleshooting",
+          "importance": 100,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Infrastructure as Code and Configuration Management",
+          "level": 2,
+          "stem": "ما هو المقصود بـ Infrastructure as Code (IaC)؟",
+          "options": [
+            "إدارة البنية التحتية عبر ملفات تكوين يمكن التحكم بها من خلال أنظمة التحكم بالإصدار",
+            "استخدام واجهات رسومية لإنشاء الموارد السحابية يدويًا",
+            "كتابة سكريبتات Bash لإدارة الخوادم فقط",
+            "استخدام أدوات مدفوعة حصريًا لإنشاء البنية التحتية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Infrastructure as Code and Configuration Management",
+          "level": 4,
+          "stem": "أي من الأدوات التالية يُعتبر الخيار الأساسي لإدارة البنية التحتية كـ IaC في بيئات السحابة متعددة المزودين؟",
+          "options": [
+            "Terraform",
+            "Git",
+            "Docker",
+            "Jenkins"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Infrastructure as Code and Configuration Management",
+          "level": 5,
+          "stem": "ما هي المشكلة الرئيسية عند إجراء تعديلات يدوية مباشرة على الموارس السحابية بينما تستخدم Terraform؟",
+          "options": [
+            "حدوث انحراف الحالة (State Drift) بين ملفات التكوين والموارد الفعلية",
+            "عدم القدرة على استخدام Terraform مع AWS بعد ذلك",
+            "Terraform يتوقف عن العمل تلقائيًا",
+            "ملفات Terraform تحتاج إلى إعادة كتابة كاملة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Infrastructure as Code and Configuration Management",
+          "level": 7,
+          "stem": "عند العمل في فريق متعدد الأعضاء مع Terraform، ما هو الحل الأمثل لإدارة ملف state بأمان وفعالية؟",
+          "options": [
+            "تخزين state في S3 مع استخدام DynamoDB للـ locking وتفعيل versioning",
+            "تخزين state في repository Git بشكل مباشر مع branch واحد",
+            "نسخ ملف state يدويًا بين أعضاء الفريق عبر البريد الإلكتروني",
+            "استخدام Terraform بدون state file والاعتماد على استعلامات API فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Infrastructure as Code and Configuration Management",
+          "level": 9,
+          "stem": "في بيئة متعددة AWS Accounts مع متطلبات أمان صارمة، ما هي أفضل ممارسة لتنظيم Terraform modules لتقليل التكرار مع الحفاظ على العزل الأمني؟",
+          "options": [
+            "استخدام root modules منفصل لكل account مع shared modules مركزي وتطبيق IAM assume-role للوصول التقاطعي",
+            "نسخ جميع Terraform files إلى كل account وتعديلها محليًا",
+            "استخدام workspace واحد مشترك لجميع الحسابات مع متغيرات شرطية",
+            "عدم استخدام modules والكتابة المباشرة في ملف main واحد لكل account"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Container Orchestration with Kubernetes",
+          "level": 2,
+          "stem": "ما هو الدور الأساسي لـ Kubernetes في إدارة الحاويات؟",
+          "options": [
+            "تنسيق نشر وتشغيل وتوسيع تطبيقات الحاويات تلقائيًا",
+            "بناء صور Docker الجديدة من الكود المصدري",
+            "إنشاء نظام تخزين لقاعدة البيانات",
+            "استبدال Docker في البيئة الإنتاجية بالكامل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Container Orchestration with Kubernetes",
+          "level": 4,
+          "stem": "في Kubernetes، ما هو الفرق الأساسي بين Pod و Deployment؟",
+          "options": [
+            "Pod هو أصغر وحدة يمكن نشرها، و Deployment يدير عددًا من Pods المماثلة",
+            "Pod و Deployment متطابقان تماما",
+            "Pod يدير الشبكات فقط، و Deployment يدير التخزين",
+            "Deployment يشغل حاوية واحدة فقط، بينما Pod يشغل عدة حاويات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Container Orchestration with Kubernetes",
+          "level": 5,
+          "stem": "ما هي العملية التي تحدث عندما يتم حذف Pod في Deployment مع replica count معين؟",
+          "options": [
+            "Deployment controller ينشئ Pod جديد تلقائيًا للحفاظ على العدد المطلوب",
+            "جميع Pods يتم حذفه تلقائيًا",
+            "لا يحدث شيء، Deployment لا يراقب حالة Pods",
+            "يتم تجميد الـ Deployment حتى يقوم المسؤول بإعادة تشغيله يدويًا"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Container Orchestration with Kubernetes",
+          "level": 7,
+          "stem": "عند تطبيق استراتيجية Rolling Update مع minAvailable و maxSurge في Kubernetes، ما هو التأثير على توفرية التطبيق؟",
+          "options": [
+            "يضمن وجود عدد معين من النسخ المتاحة دائمًا أثناء التحديث، مما يقلل من فترات توقف الخدمة",
+            "يسرع التحديث بغض النظر عن الأخطاء المحتملة",
+            "يوقف جميع النسخ القديمة قبل بدء النسخ الجديدة",
+            "لا تأثير على التوفرية، فهو يتحكم فقط في سرعة النشر"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Container Orchestration with Kubernetes",
+          "level": 9,
+          "stem": "في Kubernetes cluster متعدد المناطق مع latency منخفض مطلوب، ما هي أفضل ممارسة لإدارة pod affinity وتوزيع الحمل مع مراعاة تكاليف الشبكة؟",
+          "options": [
+            "استخدام pod affinity rules لتجميع pods المترابطة في نفس الـ zone مع pod anti-affinity لتوزيع replicas عبر nodes في نفس الـ zone",
+            "نشر جميع pods عشوائيًا دون اعتبار للـ zones",
+            "استخدام nodeSelector لتقييد جميع pods على node واحد قوي",
+            "تفعيل pod anti-affinity على جميع pods مما يفرض توزيعها على nodes مختلفة دائمًا"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CI/CD Pipeline Design and Implementation",
+          "level": 2,
+          "stem": "ما هو الهدف الأساسي لـ CI/CD pipeline؟",
+          "options": [
+            "أتمتة بناء واختبار ونشر التطبيقات بشكل مستمر وآمن",
+            "استبدال المطورين بالآلات",
+            "تقليل عدد فحوصات الجودة",
+            "تسريع كتابة الكود فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CI/CD Pipeline Design and Implementation",
+          "level": 4,
+          "stem": "أي من المراحل التالية عادة ما تأتي أولاً في CI/CD pipeline؟",
+          "options": [
+            "Build و Test على الكود الجديد",
+            "النشر المباشر للإنتاج",
+            "حذف الإصدار القديم",
+            "إرسال تقرير للمستخدمين"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CI/CD Pipeline Design and Implementation",
+          "level": 5,
+          "stem": "ما هي المشكلة المحتملة إذا لم تطبق automated testing بشكل كافي في pipeline قبل النشر؟",
+          "options": [
+            "قد يتم نشر أخطاء وأعطال إلى الإنتاج دون اكتشافها مسبقًا",
+            "البناء سيكون أبطأ بكثير",
+            "لن تتمكن من استخدام Docker",
+            "GitHub سيوقف الـ repository تلقائيًا"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CI/CD Pipeline Design and Implementation",
+          "level": 7,
+          "stem": "عند تصميم pipeline متقدم مع بيئات متعددة (dev, staging, production)، ما هي أفضل ممارسة لموازنة السرعة والأمان؟",
+          "options": [
+            "فحوصات سريعة في dev، فحوصات شاملة في staging، وتحقق يدوي قبل production",
+            "نفس الفحوصات في جميع البيئات",
+            "بدون فحوصات في dev لتسريع التطور",
+            "جميع الفحوصات تعمل بالتوازي بدون ترتيب"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "CI/CD Pipeline Design and Implementation",
+          "level": 9,
+          "stem": "في pipeline متقدم مع متطلبات نشر آمنة، كيف يمكنك تطبيق Blue-Green deployment مع canary releases وrollback فوري عند الأخطاء؟",
+          "options": [
+            "نشر الإصدار الجديد إلى بيئة منفصلة، توجيه نسبة صغيرة من الحركة إليه، المراقبة التلقائية، والعودة السريعة عند الفشل",
+            "نشر الإصدار الجديد مباشرة مع إيقاف الإصدار القديم تماما",
+            "تشغيل الإصدارين معًا دائمًا بدون تبديل الحركة",
+            "الانتظار أسبوعًا قبل نشر أي تحديث جديد"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Cloud Platforms and Services",
+          "level": 2,
+          "stem": "ما هو المقصود بـ Infrastructure as a Service (IaaS) في السحابة؟",
+          "options": [
+            "توفير موارد حوسبة أساسية مثل الخوادم والتخزين والشبكات عبر الإنترنت",
+            "توفير تطبيقات جاهزة للاستخدام عبر الإنترنت",
+            "شراء أجهزة كمبيوتر فيزيائية من المتاجر",
+            "حفظ الملفات على محرك أقراص خارجي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Cloud Platforms and Services",
+          "level": 4,
+          "stem": "ما هو الفرق الرئيسي بين AWS EC2 و AWS Lambda؟",
+          "options": [
+            "EC2 هو خوادم دائمة، Lambda ينفذ الكود عند الطلب فقط",
+            "Lambda يوفر أداء أفضل من EC2",
+            "EC2 وLambda متطابقان تماما",
+            "Lambda يمكنه فقط تشغيل Python"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Cloud Platforms and Services",
+          "level": 5,
+          "stem": "عند اختيار بين RDS و DynamoDB في AWS، ما هي الحالة التي تختار فيها DynamoDB بدلاً من RDS؟",
+          "options": [
+            "عندما تحتاج قاعدة بيانات NoSQL بدون schema ثابت مع نسبة حركة عالية جدًا",
+            "عندما تحتاج فقط لعدد قليل جدًا من الاستعلامات",
+            "عندما تحتاج join معقد بين جداول",
+            "عندما تحتاج backup يدوي فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Cloud Platforms and Services",
+          "level": 7,
+          "stem": "عند تصميم بنية معمارية لتطبيق عالي التوفرية على AWS عبر مناطق متعددة، ما هي الخدمات الأساسية المطلوبة؟",
+          "options": [
+            "EC2 في مناطق متعددة + ALB + RDS Multi-AZ + S3 مع replication + Route 53",
+            "EC2 واحد قوي جدًا يكفي",
+            "استخدام DynamoDB فقط بدون EC2",
+            "Lambda مع API Gateway فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Cloud Platforms and Services",
+          "level": 9,
+          "stem": "في بيئة cloud multi-cloud مع AWS و GCP، ما هي أفضل ممارسة لإدارة التكاليف والأداء مع ضمان عدم الالتصاق بمزود واحد (vendor lock-in)؟",
+          "options": [
+            "استخدام Terraform و Kubernetes مع container images موحدة، وفصل منطق التطبيق عن APIs المزود الخاص",
+            "استخدام AWS APIs مباشرة في الكود",
+            "نسخ البنية التحتية يدويًا على كل مزود",
+            "استخدام خدمات مختلفة في كل مزود دون توحيد"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Monitoring, Logging, and Observability",
+          "level": 2,
+          "stem": "ما هو الفرق بين Monitoring و Logging؟",
+          "options": [
+            "Monitoring يراقب صحة النظام بشكل فعلي، Logging يسجل الأحداث والأخطاء",
+            "هما نفس الشيء تماما",
+            "Monitoring فقط للتطبيقات، Logging فقط للخوادم",
+            "Logging أكثر أهمية من Monitoring"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Monitoring, Logging, and Observability",
+          "level": 4,
+          "stem": "أي من الأدوات التالية يُستخدم بشكل أساسي لجمع وتحليل السجلات (Logs)؟",
+          "options": [
+            "ELK Stack أو Splunk",
+            "Prometheus",
+            "Grafana",
+            "PagerDuty"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Monitoring, Logging, and Observability",
+          "level": 5,
+          "stem": "ما هي المشكلة التي قد تحدث إذا لم تطبق proper log rotation على الخادم؟",
+          "options": [
+            "قد تمتلئ disk بملفات السجلات القديمة، مما يسبب توقف التطبيق",
+            "السجلات ستختفي تلقائيًا",
+            "الأداء سيتحسن",
+            "لا توجد مشكلة على الإطلاق"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Monitoring, Logging, and Observability",
+          "level": 7,
+          "stem": "عند بناء نظام observability متقدم لـ microservices، ما هي المكونات الثلاث الأساسية التي يجب دمجها؟",
+          "options": [
+            "Metrics و Logs و Traces (distributed tracing) مع dashboard موحد",
+            "Logging فقط كافي",
+            "Monitoring من browser فقط",
+            "تسجيل يدوي للأخطاء في ملف نصي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Monitoring, Logging, and Observability",
+          "level": 9,
+          "stem": "في بيئة إنتاجية معقدة مع آلاف من الخوادم، كيف يمكنك تحسين cost efficiency لجمع وتخزين السجلات مع الحفاظ على القدرة على حل المشاكل بسرعة؟",
+          "options": [
+            "تطبيق tiered logging: logs ساخنة قصيرة المدى في storage سريع، و cold logs طويلة المدى في storage رخيص، مع sampling للبيانات الضخمة جدًا",
+            "حفظ جميع السجلات بتفاصيل كاملة دائمًا",
+            "عدم حفظ logs الخطأ للتوفير",
+            "استخدام database واحد لتخزين جميع السجلات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Linux System Administration and Scripting",
+          "level": 2,
+          "stem": "ما هو دور الـ root user في Linux؟",
+          "options": [
+            "المستخدم الذي لديه صلاحيات كاملة على النظام",
+            "المستخدم الجديد الذي يتم إنشاؤه عند التثبيت",
+            "مستخدم له صلاحيات محدودة جدًا",
+            "مستخدم خاص للـ database فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Linux System Administration and Scripting",
+          "level": 4,
+          "stem": "ما هو الفرق بين chmod 644 و chmod 755 في Linux؟",
+          "options": [
+            "644 يسمح قراءة وكتابة للمالك والآخرين قراءة فقط، 755 يسمح تنفيذ للمالك والمجموعة والآخرين",
+            "كلاهما متطابق",
+            "لا يوجد فرق عملي بينهما",
+            "644 أسرع من 755"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Linux System Administration and Scripting",
+          "level": 5,
+          "stem": "ما هي النتيجة عندما تقوم بتشغيل `find / -type f -name \"*.log\" 2>/dev/null | xargs rm`؟",
+          "options": [
+            "حذف جميع ملفات السجلات من النظام بأكمله (خطير جدًا)",
+            "عرض قائمة بملفات السجلات فقط",
+            "نسخ ملفات السجلات",
+            "ضغط ملفات السجلات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Linux System Administration and Scripting",
+          "level": 7,
+          "stem": "عند كتابة script Bash لمراقبة استهلاك disk وإرسال تنبيه عند الامتلاء، ما هي أفضل طريقة لتشغيله بشكل دوري؟",
+          "options": [
+            "إضافة cron job يشغل script كل 15 دقيقة مثلاً",
+            "تشغيل script يدويًا كل مرة",
+            "تشغيل script مرة واحدة فقط",
+            "استخدام at command لتشغيل واحد"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Linux System Administration and Scripting",
+          "level": 9,
+          "stem": "عند بناء script Bash متقدم يتعامل مع multiple servers مع error handling قوي وlogging شامل، ما هي أفضل الممارسات؟",
+          "options": [
+            "استخدام set -e للخروج عند الأخطاء، trap للـ cleanup، logging إلى syslog، و timeout للعمليات، مع SSH keyless authentication عبر authorized_keys",
+            "كتابة script بسيط بدون error handling",
+            "استخدام echo فقط بدون أي logging proper",
+            "تشغيل script بدون timeout مع تجاهل الأخطاء"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Incident Response and Production Troubleshooting",
+          "level": 2,
+          "stem": "ما هو الخطوة الأولى عند حدوث incident في الإنتاج؟",
+          "options": [
+            "تسجيل incident و إبلاغ الفريق المسؤول",
+            "محاولة إصلاحه بدون إخبار أحد",
+            "حذف السجلات",
+            "إعادة تشغيل جميع الخوادم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Incident Response and Production Troubleshooting",
+          "level": 4,
+          "stem": "ما هو الفرق بين incident بـ Severity P1 و Severity P3؟",
+          "options": [
+            "P1 حرج يؤثر على المستخدمين، P3 أقل تأثيرًا ويمكن تأجيله",
+            "لا يوجد فرق",
+            "P3 أكثر حرجًا من P1",
+            "P1 فقط للخوادم الفيزيائية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Incident Response and Production Troubleshooting",
+          "level": 5,
+          "stem": "عندما يكون التطبيق بطيء جدًا في الإنتاج، ما هو الخطوة الأولى للتشخيص؟",
+          "options": [
+            "فحص CPU و memory و disk I/O و network logs",
+            "إعادة تشغيل التطبيق مباشرة",
+            "زيادة resource allocation فقط",
+            "تنظيف cache دون فحص المشكلة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Incident Response and Production Troubleshooting",
+          "level": 7,
+          "stem": "في incident يسبب downtime طويل، ما هي أفضل ممارسة للـ communication و documentation أثناء الحل؟",
+          "options": [
+            "تحديث incident tracker كل 15 دقيقة و إبلاغ stakeholders، وتوثيق خطوات الحل و rootcause post-mortem",
+            "عدم إخبار أحد حتى ينتهي الإصلاح",
+            "إرسال تقرير واحد فقط في النهاية",
+            "لا حاجة للتوثيق إذا تم الإصلاح"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Incident Response and Production Troubleshooting",
+          "level": 9,
+          "stem": "عند حدوث incident معقد يتعلق بـ database replication failure في بيئة multi-region، ما هي الخطوات الصحيحة للتشخيص و الاسترجاع؟",
+          "options": [
+            "فحص replication lag و binlog positions، عزل المنطقة المتأثرة، failover إلى replica سليمة، إجراء data consistency check، وإصلاح replication تدريجيًا",
+            "حذف جميع replicas و إعادة إنشاؤها",
+            "القيام بـ failover فوري بدون فحص البيانات",
+            "الانتظار حتى تصلح نفسها تلقائيًا"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "role": "Data Scientist",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Machine Learning Model Development",
+          "importance": 850,
+          "startLevel": 4
+        },
+        {
+          "name": "Statistical Analysis and Hypothesis Testing",
+          "importance": 720,
+          "startLevel": 4
+        },
+        {
+          "name": "Python Programming and Data Manipulation",
+          "importance": 800,
+          "startLevel": 5
+        },
+        {
+          "name": "SQL and Database Querying",
+          "importance": 650,
+          "startLevel": 4
+        },
+        {
+          "name": "Data Visualization and Communication",
+          "importance": 700,
+          "startLevel": 4
+        },
+        {
+          "name": "Feature Engineering and Data Preprocessing",
+          "importance": 770,
+          "startLevel": 4
+        },
+        {
+          "name": "Business Problem Framing and Analytics",
+          "importance": 680,
+          "startLevel": 3
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Machine Learning Model Development",
+          "level": 2,
+          "stem": "ما هو الهدف الأساسي من فصل البيانات إلى مجموعة Train و Test؟",
+          "options": [
+            "لتسريع سرعة التدريب",
+            "لتقييم أداء النموذج على بيانات لم يرها من قبل",
+            "لتقليل حجم الذاكرة المستخدمة",
+            "لزيادة عدد الميزات في النموذج"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Machine Learning Model Development",
+          "level": 4,
+          "stem": "أي من الخيارات التالية يشير إلى Overfitting في النموذج؟",
+          "options": [
+            "دقة عالية على بيانات التدريب ودقة منخفضة على بيانات الاختبار",
+            "دقة منخفضة على بيانات التدريب ودقة عالية على بيانات الاختبار",
+            "دقة منخفضة على كلا المجموعتين",
+            "دقة عالية على كلا المجموعتين بالتساوي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Machine Learning Model Development",
+          "level": 5,
+          "stem": "ما هو المقصد الرئيسي لاستخدام Cross-Validation بدلا من Train-Test Split العادي؟",
+          "options": [
+            "تقليل وقت التدريب الكلي",
+            "تقديم تقدير أكثر استقرارا وموثوقية لأداء النموذج",
+            "التأكد من أن جميع البيانات تستخدم للتدريب فقط",
+            "تقليل عدد المعاملات الزائدة في النموذج"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Machine Learning Model Development",
+          "level": 7,
+          "stem": "عند اختيار بين K-Fold Cross-Validation مع K=5 و K=10، ما هو المقايضة الرئيسية؟",
+          "options": [
+            "K=10 يوفر تقديرا أكثر استقرارا لكنه يتطلب وقتا حسابيا أكثر",
+            "K=5 يعطي دقة أعلى من K=10 دائما",
+            "K=10 يقلل من Overfitting بشكل كامل",
+            "K=5 أفضل لجميع أنواع المسائل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Machine Learning Model Development",
+          "level": 9,
+          "stem": "أي من الحالات التالية قد تسبب تسرب بيانات Data Leakage عند استخدام Scaling على كامل البيانات قبل فصل Train-Test؟",
+          "options": [
+            "معلومات من بيانات الاختبار تؤثر على معاملات Scaling المحسوبة",
+            "يصبح النموذج أبطأ في التنفيذ",
+            "يقلل من عدد الميزات المستخدمة",
+            "يزيد من استهلاك الذاكرة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis and Hypothesis Testing",
+          "level": 2,
+          "stem": "ما هي قيمة P-Value في اختبار الفرضية الإحصائية؟",
+          "options": [
+            "احتمالية أن تكون الفرضية الصفرية صحيحة",
+            "احتمالية ملاحظة البيانات إذا كانت الفرضية الصفرية صحيحة",
+            "احتمالية أن تكون الفرضية البديلة خاطئة",
+            "قيمة ثابتة تساوي دائما 0.05"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Statistical Analysis and Hypothesis Testing",
+          "level": 4,
+          "stem": "أي اختبار إحصائي تستخدم لمقارنة المتوسطات بين مجموعتين من البيانات المستقلة؟",
+          "options": [
+            "Chi-Square Test",
+            "T-Test",
+            "ANOVA",
+            "Correlation Test"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Statistical Analysis and Hypothesis Testing",
+          "level": 5,
+          "stem": "ما هي مشكلة Multiple Comparison Problem؟",
+          "options": [
+            "إجراء عدة اختبارات يزيد من احتمالية الحصول على false positive بالصدفة",
+            "مقارنة أكثر من مجموعتين تستهلك وقتا أطول",
+            "عدم استطاعة إجراء أكثر من اختبار واحد على نفس البيانات",
+            "استحالة الحصول على نتائج دقيقة عند المقارنات المتعددة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis and Hypothesis Testing",
+          "level": 7,
+          "stem": "عند اختبار 100 فرضية بمستوى معنوية Alpha=0.05، كم عدد النتائج الإيجابية الكاذبة المتوقعة عشوائيا؟",
+          "options": [
+            "حوالي 5 نتائج إيجابية كاذبة",
+            "حوالي 50 نتيجة إيجابية كاذبة",
+            "حوالي 1 نتيجة إيجابية كاذبة",
+            "لا يمكن حسابها بدون معرفة البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis and Hypothesis Testing",
+          "level": 9,
+          "stem": "ما هو الفرق بين Type I Error و Type II Error في السياق الطبي؟",
+          "options": [
+            "Type I هو تشخيص مريض بمرض لا يعاني منه، Type II هو عدم تشخيص مريض يعاني من المرض",
+            "كلاهما يشير للخطأ في القياس",
+            "Type I أخطر من Type II دائما",
+            "لا فرق بينهما إحصائيا"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming and Data Manipulation",
+          "level": 2,
+          "stem": "ما هي النتيجة المتوقعة لـ len([1, 2, 3, 4, 5])?",
+          "options": [
+            "4",
+            "5",
+            "6",
+            "0"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Python Programming and Data Manipulation",
+          "level": 4,
+          "stem": "كيف تحصل على قيمة معينة من DataFrame في pandas باستخدام loc؟",
+          "options": [
+            "df.loc[row_label, column_label]",
+            "df[row_label][column_label]",
+            "df.row_label.column_label",
+            "df.get(row_label, column_label)"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming and Data Manipulation",
+          "level": 5,
+          "stem": "ما هي نتيجة العملية التالية: df.groupby('category')['value'].agg(['sum', 'mean'])?",
+          "options": [
+            "حساب المجموع والمتوسط لكل فئة",
+            "حساب المجموع فقط لكل فئة",
+            "ترتيب البيانات حسب الفئة والقيمة",
+            "حذف الصفوف المكررة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming and Data Manipulation",
+          "level": 7,
+          "stem": "عند العمل مع DataFrame كبير جدا، أي من الطرق التالية الأكثر كفاءة من حيث الذاكرة؟",
+          "options": [
+            "استخدام apply() مع دالة مخصصة لكل صف",
+            "استخدام vectorized operations من numpy/pandas",
+            "تحويل البيانات إلى قائمة Python وتطبيق حلقات",
+            "نسخ البيانات عدة مرات للمعالجة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Python Programming and Data Manipulation",
+          "level": 9,
+          "stem": "ما هي الفخاخ المحتملة عند استخدام inplace=True في pandas operations؟",
+          "options": [
+            "قد تسبب نتائج غير متوقعة عند العمل مع views بدلا من copies",
+            "تزيد دائما من سرعة التنفيذ",
+            "توفر ذاكرة دائما مقارنة بعدم استخدامها",
+            "لا فرق بينها وبين عدم استخدام inplace=True"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "SQL and Database Querying",
+          "level": 2,
+          "stem": "ما هو الهدف من جملة WHERE في استعلام SQL؟",
+          "options": [
+            "تحديد الصفوف التي تطابق شرط معين",
+            "ترتيب النتائج بشكل تصاعدي",
+            "ربط جداول متعددة",
+            "حساب مجموع القيم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "SQL and Database Querying",
+          "level": 4,
+          "stem": "ما الفرق بين INNER JOIN و LEFT JOIN؟",
+          "options": [
+            "INNER JOIN يعيد فقط الصفوف المتطابقة من الجداول، LEFT JOIN يعيد جميع الصفوف من الجدول الأيسر",
+            "LEFT JOIN أسرع من INNER JOIN",
+            "لا فرق بينهما",
+            "INNER JOIN يعيد جميع الصفوف والأعمدة من كلا الجداول"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "SQL and Database Querying",
+          "level": 5,
+          "stem": "كيف تحسب المتوسط المتراكم (running average) لكل صف في SQL؟",
+          "options": [
+            "استخدام AVG مع GROUP BY فقط",
+            "استخدام Window Functions مثل AVG() OVER (ORDER BY column)",
+            "استخدام Subquery في SELECT",
+            "استخدام DISTINCT مع GROUP_CONCAT"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "SQL and Database Querying",
+          "level": 7,
+          "stem": "عند كتابة استعلام معقد يتضمن عدة JOINs، ما هو الأثر المحتمل على Performance؟",
+          "options": [
+            "كل JOIN إضافي يضاعف وقت التنفيذ حتما",
+            "يعتمد على ترتيب JOINs، حجم الجداول، والفهارس المتاحة",
+            "JOINs ليس لها تأثير على Performance",
+            "استخدام أكثر من 3 JOINs يؤدي لخطأ دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "SQL and Database Querying",
+          "level": 9,
+          "stem": "ما هي الحالات التي قد تسبب Cartesian Product غير المقصود في استعلام متعدد الجداول؟",
+          "options": [
+            "عدم تحديد شرط JOIN صحيح أو استخدام WHERE بدلا من ON",
+            "استخدام LEFT JOIN بدلا من INNER JOIN",
+            "وجود أكثر من جدول واحد في FROM",
+            "استخدام DISTINCT في SELECT"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Visualization and Communication",
+          "level": 2,
+          "stem": "أي نوع من الرسوم البيانية يناسب إظهار التوزيع الكلي لفئات مختلفة؟",
+          "options": [
+            "Line Chart",
+            "Pie Chart",
+            "Scatter Plot",
+            "Box Plot"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Data Visualization and Communication",
+          "level": 4,
+          "stem": "ما هو الخطأ الشائع عند استخدام Pie Chart؟",
+          "options": [
+            "صعوبة مقارنة القيم الصغيرة بسبب الزوايا",
+            "استهلاك ذاكرة أكثر من الرسوم الأخرى",
+            "عدم القدرة على عرض أكثر من 5 فئات",
+            "عدم إمكانية إضافة Labels"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Visualization and Communication",
+          "level": 5,
+          "stem": "ما هو الفرق بين استخدام Color و Size في Scatter Plot؟",
+          "options": [
+            "كلاهما يعبر عن نفس المعنى",
+            "Color يمثل متغير كمي فقط بينما Size يمثل متغير وصفي",
+            "كلاهما يمكن تمثيل متغيرات مختلفة لتعزيز الفهم متعدد الأبعاد",
+            "Size أقل فعالية من Color دائما"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Data Visualization and Communication",
+          "level": 7,
+          "stem": "عند اختيار عدد التقسيمات في Histogram، ما هي المقايضة الرئيسية؟",
+          "options": [
+            "عدد أقل من التقسيمات يعطي تفاصيل أكثر",
+            "عدد أكثر من التقسيمات قد يعطي ضوضاء بدلا من الإشارات المهمة",
+            "عدد التقسيمات لا يؤثر على الرسم البياني",
+            "يجب دائما استخدام 10 تقسيمات"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Data Visualization and Communication",
+          "level": 9,
+          "stem": "كيف قد تكون الرسوم البيانية مضللة حتى لو كانت صحيحة إحصائيا؟",
+          "options": [
+            "استخدام مقياس محرف على المحور Y، أو تقطيع المحور، أو اختيار ألوان مضللة",
+            "استخدام الكثير من الألوان",
+            "إضافة شرح نصي طويل",
+            "عرض أكثر من متغير واحد"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Feature Engineering and Data Preprocessing",
+          "level": 2,
+          "stem": "ما هو الهدف من Normalization و Standardization؟",
+          "options": [
+            "تغيير نطاق المتغيرات حتى تكون على نفس المقياس",
+            "حذف القيم الشاذة",
+            "ملء القيم الناقصة",
+            "زيادة عدد الميزات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Feature Engineering and Data Preprocessing",
+          "level": 4,
+          "stem": "كيف تحول متغير تصنيفي مثل 'اللون' بقيم Red و Blue و Green إلى صيغة رقمية؟",
+          "options": [
+            "One-Hot Encoding",
+            "استخدام القيم 1، 2، 3 مباشرة",
+            "حذف المتغير تماما",
+            "تحويله إلى متغير Binary"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Feature Engineering and Data Preprocessing",
+          "level": 5,
+          "stem": "ما هو الفرق بين Feature Selection و Feature Extraction؟",
+          "options": [
+            "كلاهما نفس العملية",
+            "Feature Selection تختار ميزات موجودة، Feature Extraction تنشئ ميزات جديدة",
+            "Feature Extraction أسرع من Feature Selection",
+            "Feature Selection يزيد من عدد الميزات دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Feature Engineering and Data Preprocessing",
+          "level": 7,
+          "stem": "ما هو Data Leakage وكيف يحدث في Feature Engineering؟",
+          "options": [
+            "استخدام معلومات من بيانات الاختبار عند بناء الميزات",
+            "استخدام نفس الميزات لنماذج متعددة",
+            "حذف الميزات ذات الارتباط المنخفض",
+            "إضافة ضوضاء عشوائية للبيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Feature Engineering and Data Preprocessing",
+          "level": 9,
+          "stem": "عند التعامل مع بيانات غير متوازنة Imbalanced Data، ما هي مخاطر استخدام Accuracy البسيطة كمقياس؟",
+          "options": [
+            "قد يعطي مقياس مرتفع مخادع إذا كان النموذج يتنبأ بالفئة الأكثر شيوعا فقط",
+            "Accuracy أفضل مقياس دائما للبيانات غير المتوازنة",
+            "لا توجد مشكلة في استخدام Accuracy",
+            "البيانات غير المتوازنة لا تؤثر على Accuracy"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Business Problem Framing and Analytics",
+          "level": 2,
+          "stem": "ما هو الفرق بين Descriptive Analytics و Predictive Analytics؟",
+          "options": [
+            "Descriptive يصف ما حدث، Predictive يتنبأ بما قد يحدث",
+            "كلاهما متطابق",
+            "Predictive أسهل من Descriptive",
+            "Descriptive يركز على المستقبل فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Business Problem Framing and Analytics",
+          "level": 4,
+          "stem": "ما هو KPI (Key Performance Indicator) وكيف يختلف عن المقياس العام؟",
+          "options": [
+            "KPI هو مقياس مرتبط مباشرة بأهداف العمل وله قيمة محددة",
+            "KPI و المقياس العام نفس الشيء",
+            "KPI يستخدم فقط للبيانات المالية",
+            "لا يمكن تعريف KPI بدقة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Business Problem Framing and Analytics",
+          "level": 5,
+          "stem": "عند تصميم تجربة A/B Test، ما هي العوامل الرئيسية التي يجب حسابها؟",
+          "options": [
+            "حجم العينة، مدة التجربة، والمقياس الرئيسي فقط",
+            "حجم العينة، مدة التجربة، معنوية الفرق المتوقع، والمقياس الرئيسي",
+            "عدد المستخدمين فقط",
+            "لا تحتاج لحسابات محددة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Business Problem Framing and Analytics",
+          "level": 7,
+          "stem": "ما هو Confounder وكيف يؤثر على نتائج التحليل السببي؟",
+          "options": [
+            "متغير يؤثر على كل من السبب والنتيجة، مما قد يخلق ارتباطا وهميا",
+            "نفس الشيء مع التفاعل Interaction",
+            "متغير لا يؤثر على النتائج",
+            "Confounder يحسن دقة التحليل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Business Problem Framing and Analytics",
+          "level": 9,
+          "stem": "ما هو Simpson's Paradox وكيف قد يؤدي إلى استنتاجات خاطئة عند تجميع البيانات؟",
+          "options": [
+            "الاتجاه الملاحظ في البيانات المجمعة قد ينعكس عند تقسيمها إلى فئات فرعية",
+            "زيادة حجم العينة دائما تحسن الدقة",
+            "البيانات المتوازنة تضمن النتائج الصحيحة",
+            "المقاييس المختلفة لا تؤثر على النتائج"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "role": "Machine Learning Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Core Machine Learning Algorithms & Theory",
+          "importance": 180,
+          "startLevel": 5
+        },
+        {
+          "name": "Python Programming & Data Manipulation",
+          "importance": 170,
+          "startLevel": 5
+        },
+        {
+          "name": "Deep Learning & Neural Networks",
+          "importance": 160,
+          "startLevel": 4
+        },
+        {
+          "name": "Data Preprocessing & Feature Engineering",
+          "importance": 160,
+          "startLevel": 4
+        },
+        {
+          "name": "Model Evaluation, Validation & Experimentation",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "MLOps, Deployment & Production Systems",
+          "importance": 120,
+          "startLevel": 3
+        },
+        {
+          "name": "Statistical Analysis & Inference",
+          "importance": 110,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Core Machine Learning Algorithms & Theory",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين التعلم الموجه (Supervised Learning) والتعلم غير الموجه (Unsupervised Learning)؟",
+          "options": [
+            "التعلم الموجه يستخدم بيانات مع تسميات، والتعلم غير الموجه يستخدم بيانات بدون تسميات",
+            "التعلم الموجه أسرع دائماً من التعلم غير الموجه",
+            "التعلم غير الموجه يتطلب قوة حوسبة أكثر بكثير",
+            "كلا النوعين يحتاجان إلى نفس كمية البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Core Machine Learning Algorithms & Theory",
+          "level": 4,
+          "stem": "في خوارزمية K-Means، ما هو الهدف الرئيسي للخوارزمية؟",
+          "options": [
+            "تقسيم البيانات إلى K مجموعات بحيث تكون المسافة داخل كل مجموعة أقل ما يمكن",
+            "إيجاد K نقطة عشوائية في البيانات",
+            "ترتيب البيانات بناءً على التشابه الخطي",
+            "حساب الارتباط بين جميع أزواج البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Core Machine Learning Algorithms & Theory",
+          "level": 5,
+          "stem": "عند استخدام Support Vector Machines (SVM) مع kernel غير خطي، ما الذي يحدث في الواقع؟",
+          "options": [
+            "يتم تحويل البيانات إلى فضاء أبعاد أعلى للبحث عن حد فاصل خطي",
+            "يتم تقليل عدد الميزات بشكل مباشر",
+            "يتم استخدام دالة activation بدلاً من kernel",
+            "يتم تطبيق PCA تلقائياً على البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Core Machine Learning Algorithms & Theory",
+          "level": 7,
+          "stem": "في Decision Trees، ما المشكلة الرئيسية المرتبطة بـ overfitting، وكيف يمكن التعامل معها؟",
+          "options": [
+            "الشجرة تصبح عميقة جداً وتحفظ الضوضاء - يمكن التحكم بعمق الشجرة أو استخدام pruning",
+            "الشجرة لا تتعلم الأنماط الكافية - يجب زيادة عدد الأشجار",
+            "البيانات تحتاج إلى تطبيع قبل بناء الشجرة",
+            "Overfitting لا يحدث في Decision Trees"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Core Machine Learning Algorithms & Theory",
+          "level": 9,
+          "stem": "عند مقارنة Random Forest مع Gradient Boosting في سياق مشكلة تحتوي على ميزات مرتبطة بشدة، ما التبادل الرئيسي؟",
+          "options": [
+            "Random Forest يعاني أقل من multicollinearity بسبب العشوائية في الميزات، لكن Gradient Boosting قد يستخرج علاقات غير خطية أفضل",
+            "Gradient Boosting دائماً أسوأ مع البيانات المرتبطة",
+            "Random Forest يتطلب تطبيع البيانات بينما Gradient Boosting لا يحتاج",
+            "كلا الخوارزميتين متساويتان تماماً في هذه الحالة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming & Data Manipulation",
+          "level": 2,
+          "stem": "ما هي الدالة الأساسية لقراءة ملف CSV في مكتبة Pandas؟",
+          "options": [
+            "pd.read_csv()",
+            "pd.load_csv()",
+            "pd.import_csv()",
+            "pd.open_csv()"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming & Data Manipulation",
+          "level": 4,
+          "stem": "إذا أردت الحصول على عدد الصفوف والأعمدة في DataFrame، أي من التالي صحيح؟",
+          "options": [
+            "df.shape يعيد tuple بصيغة (عدد الصفوف، عدد الأعمدة)",
+            "df.size يعيد عدد الصفوف فقط",
+            "df.dimensions يعيد عدد الأعمدة فقط",
+            "df.len() يعيد العدد الكلي للخلايا"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming & Data Manipulation",
+          "level": 5,
+          "stem": "في NumPy، ما الفرق بين shape=(3, 4) و shape=(3, 4, 1) للمصفوفة؟",
+          "options": [
+            "الأول مصفوفة ثنائية الأبعاد، والثاني ثلاثي الأبعاد بحتى وإن كان البعد الثالث حجمه 1",
+            "كلاهما نفس الشيء ولا فرق بينهما",
+            "الثاني أكثر كفاءة في استخدام الذاكرة",
+            "الأول يستخدم في التصنيف والثاني في الانحدار فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming & Data Manipulation",
+          "level": 7,
+          "stem": "عند استخدام df.apply() مع دالة مخصصة على DataFrame كبير جداً، ما المشكلة المحتملة وما الحل؟",
+          "options": [
+            "apply قد تكون بطيئة لأنها لا تستفيد من vectorization - يفضل استخدام NumPy operations أو Pandas built-in methods",
+            "apply دائماً أسرع من العمليات الأخرى",
+            "apply لا تعمل مع DataFrames التي تحتوي على أنواع بيانات مختلفة",
+            "apply تتطلب تحويل البيانات إلى NumPy arrays أولاً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Python Programming & Data Manipulation",
+          "level": 9,
+          "stem": "عند التعامل مع بيانات ضخمة تتجاوز الذاكرة المتاحة، ما أفضل استراتيجية للقراءة والمعالجة في Pandas؟",
+          "options": [
+            "استخدام chunksize parameter في read_csv() لمعالجة البيانات على دفعات أو استخدام Dask للمعالجة الموازية",
+            "قراءة الملف كاملاً مع تعطيل garbage collection",
+            "تحويل البيانات إلى HDF5 بدون معالجة مسبقة",
+            "استخدام إصدار قديم من Pandas يستهلك ذاكرة أقل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Deep Learning & Neural Networks",
+          "level": 2,
+          "stem": "ما هو دور activation function في الشبكة العصبية؟",
+          "options": [
+            "إضافة non-linearity لتمكين الشبكة من تعلم أنماط معقدة",
+            "تقليل عدد المعاملات في الشبكة",
+            "تسريع عملية التدريب فقط",
+            "منع overfitting تلقائياً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Deep Learning & Neural Networks",
+          "level": 4,
+          "stem": "ما الفرق الأساسي بين ReLU و Sigmoid activation functions؟",
+          "options": [
+            "ReLU تعيد 0 للمدخلات السالبة وتعيد المدخل نفسه للموجبة، بينما Sigmoid تعيد قيمة بين 0 و 1",
+            "كلاهما نفس الوظيفة تماماً",
+            "Sigmoid أسرع من ReLU في التدريب",
+            "ReLU تستخدم فقط في الطبقة الأخيرة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Deep Learning & Neural Networks",
+          "level": 5,
+          "stem": "عند تطبيق Batch Normalization، ماذا يحدث أثناء التدريب والاختبار (inference)؟",
+          "options": [
+            "أثناء التدريب تستخدم إحصائيات الدفعة الحالية، وأثناء الاختبار تستخدم إحصائيات عامة محفوظة من كل الدفعات التدريبية",
+            "تستخدم نفس الإحصائيات في كلا المرحلتين",
+            "Batch Normalization لا تستخدم إحصائيات على الإطلاق",
+            "الاختبار لا يحتاج إلى Batch Normalization"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Deep Learning & Neural Networks",
+          "level": 7,
+          "stem": "في Convolutional Neural Networks (CNN)، ما تأثير زيادة kernel size على receptive field والمعاملات القابلة للتدريب؟",
+          "options": [
+            "kernel size أكبر يزيد receptive field لكن يزيد عدد المعاملات بشكل كبير وقد يقلل القدرة على تعلم ميزات دقيقة",
+            "kernel size الأكبر دائماً يحسن الأداء",
+            "kernel size لا يؤثر على عدد المعاملات",
+            "receptive field لا يتأثر بحجم kernel"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Deep Learning & Neural Networks",
+          "level": 9,
+          "stem": "عند اختيار بين LSTM وGRU لمشكلة sequence-to-sequence، ما المقايضات الرئيسية المتعلقة بالتعقيد والأداء والذاكرة؟",
+          "options": [
+            "LSTM أكثر تعقيداً وتتطلب ذاكرة أكثر لكن قد تتعلم تبعيات أطول، بينما GRU أسرع وتستخدم ذاكرة أقل مع أداء مشابهة غالباً",
+            "LSTM و GRU متطابقتان تماماً من حيث الأداء والسرعة",
+            "GRU أقوى بكثير من LSTM في جميع الحالات",
+            "الاختيار بينهما لا يؤثر على الأداء النهائية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Preprocessing & Feature Engineering",
+          "level": 2,
+          "stem": "ما هو الهدف من تطبيع البيانات (Normalization) قبل استخدام خوارزمية مسافة مثل KNN؟",
+          "options": [
+            "جعل جميع الميزات لها نفس المقياس لمنع الميزات الكبيرة من السيطرة على الحساب",
+            "زيادة دقة النموذج تلقائياً",
+            "تقليل عدد الميزات",
+            "إزالة جميع القيم الشاذة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Preprocessing & Feature Engineering",
+          "level": 4,
+          "stem": "عند التعامل مع القيم المفقودة في dataset، أي من التالي ليس نهج صحيح؟",
+          "options": [
+            "تجاهل القيم المفقودة بدون أي معالجة أو استراتيجية بديلة",
+            "حذف الصفوف التي تحتوي على قيم مفقودة",
+            "ملء القيم المفقودة بالمتوسط أو الوسيط",
+            "استخدام نموذج للتنبؤ بالقيم المفقودة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Preprocessing & Feature Engineering",
+          "level": 5,
+          "stem": "ما المشكلة المحتملة عند تطبيق Feature Scaling قبل تقسيم البيانات إلى train و test؟",
+          "options": [
+            "قد يؤدي إلى data leakage لأن إحصائيات test set تؤثر على scaling parameters",
+            "Feature Scaling لا يؤثر على النتائج إذا تم تطبيقه قبل التقسيم",
+            "Feature Scaling يجب تطبيقه قبل التقسيم دائماً",
+            "لا توجد مشكلة في هذا النهج"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Preprocessing & Feature Engineering",
+          "level": 7,
+          "stem": "في Feature Engineering، ما الفرق بين Polynomial Features وInteraction Features، ومتى تستخدم كل منهما؟",
+          "options": [
+            "Polynomial Features تنشئ قوى الميزات الأصلية، Interaction Features تنشئ منتجات ميزات مختلفة. استخدم Polynomial للعلاقات غير الخطية وInteraction عندما تشك في تفاعل بين ميزات",
+            "كلاهما نفس الشيء تماماً",
+            "Polynomial Features أفضل دائماً من Interaction Features",
+            "يجب استخدام كلاهما معاً في جميع الحالات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data Preprocessing & Feature Engineering",
+          "level": 9,
+          "stem": "عند التعامل مع categorical variables عالية الأبعاد (high cardinality)، ما التبادل بين One-Hot Encoding و Target Encoding؟",
+          "options": [
+            "One-Hot Encoding آمن لكن ينشئ أعمدة كثيرة قد تسبب curse of dimensionality، Target Encoding أكثر كفاءة لكن قد يسبب overfitting إذا لم يتم بحذر",
+            "كلاهما نفس الأداء دائماً",
+            "One-Hot Encoding أفضل دائماً",
+            "Target Encoding لا يستخدم أبداً في الممارسة الحقيقية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Model Evaluation, Validation & Experimentation",
+          "level": 2,
+          "stem": "ما هي مشكلة استخدام accuracy كمقياس وحيد لتقييم نموذج في مشكلة تصنيف غير متوازنة؟",
+          "options": [
+            "accuracy قد تكون مرتفعة حتى لو كان النموذج سيء على الفئات الأقلية لأنه يتجاهل الفئات غير الموازنة",
+            "accuracy دائماً مقياس موثوق",
+            "accuracy لا يمكن استخدامه أبداً في التصنيف",
+            "accuracy يتطلب موازنة يدوية للبيانات أولاً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Model Evaluation, Validation & Experimentation",
+          "level": 4,
+          "stem": "ما الفرق بين Precision و Recall في مشكلة التصنيف الثنائي؟",
+          "options": [
+            "Precision هي نسبة التنبؤات الموجبة الصحيحة من إجمالي التنبؤات الموجبة، Recall هي نسبة التنبؤات الموجبة الصحيحة من إجمالي الإيجابيات الفعلية",
+            "كلاهما نفس الشيء تماماً",
+            "Precision هي دقة النموذج الكلية",
+            "Recall لا يُستخدم في التصنيف"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Model Evaluation, Validation & Experimentation",
+          "level": 5,
+          "stem": "عند استخدام K-Fold Cross-Validation مع K=5، كم عدد المرات التي يتم فيها تدريب النموذج؟",
+          "options": [
+            "5 مرات، كل مرة بـ 4 folds للتدريب و 1 fold للاختبار",
+            "مرة واحدة فقط",
+            "10 مرات",
+            "يعتمد على حجم البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Model Evaluation, Validation & Experimentation",
+          "level": 7,
+          "stem": "في مشكلة انحدار، ما الفرق بين MAE و RMSE، ومتى تختار كل منهما؟",
+          "options": [
+            "MAE أقل حساسية للقيم الشاذة، RMSE تعاقب الأخطاء الكبيرة أكثر. استخدم MAE عندما تكون لديك قيم شاذة، RMSE عندما تريد تقليل الأخطاء الكبيرة",
+            "كلاهما نفس الشيء تماماً",
+            "RMSE دائماً أفضل من MAE",
+            "اختيار المقياس لا يؤثر على الأداء"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Model Evaluation, Validation & Experimentation",
+          "level": 9,
+          "stem": "عند استخدام nested cross-validation للاختيار بين نماذج hyperparameter tuning، ما الغرض من الحلقة الداخلية والخارجية؟",
+          "options": [
+            "الحلقة الخارجية تقيّم أداء النموذج بشكل غير متحيز، الحلقة الداخلية تختار أفضل hyperparameters. هذا يمنع optimistic bias في الأداء المقررة",
+            "كلا الحلقتين لنفس الغرض",
+            "nested cross-validation لا يستخدم في الممارسة",
+            "الحلقة الداخلية فقط ضرورية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "MLOps, Deployment & Production Systems",
+          "level": 2,
+          "stem": "ما هو الهدف الأساسي من MLOps؟",
+          "options": [
+            "أتمتة ودمج عمليات تطوير وتوزيع واستشراف نماذج Machine Learning بكفاءة",
+            "كتابة كود أقصر وأسرع",
+            "استخدام أقوى أجهزة حاسوب",
+            "إزالة جميع الأخطاء من النماذج"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "MLOps, Deployment & Production Systems",
+          "level": 4,
+          "stem": "ما الفرق بين Model Monitoring و Data Monitoring في الإنتاج؟",
+          "options": [
+            "Model Monitoring يتتبع أداء النموذج (accuracy، latency)، Data Monitoring يتتبع خصائص البيانات الداخلة (distribution shifts، missing values)",
+            "كلاهما يفعلان نفس الشيء",
+            "Data Monitoring أكثر أهمية من Model Monitoring",
+            "لا حاجة لأي من هذه المراقبة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "MLOps, Deployment & Production Systems",
+          "level": 5,
+          "stem": "ما المقصود بـ Data Drift وكيف يؤثر على نموذج في الإنتاج؟",
+          "options": [
+            "Data Drift هو التغيير في توزيع البيانات الداخلة مقارنة بيانات التدريب، مما قد يقلل من أداء النموذج",
+            "Data Drift لا يؤثر على النموذج",
+            "Data Drift يحسن أداء النموذج تلقائياً",
+            "Data Drift يحدث فقط في البيانات الصغيرة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "MLOps, Deployment & Production Systems",
+          "level": 7,
+          "stem": "في نظام ML في الإنتاج، ما المتطلبات الرئيسية لـ Reproducibility والفرق بينها وبين Robustness؟",
+          "options": [
+            "Reproducibility تعني الحصول على نفس النتائج بنفس المدخلات والكود، Robustness تعني تحمل النموذج للتغييرات والأخطاء. كلاهما ضروري للنظام الموثوق",
+            "كلاهما نفس الشيء",
+            "Reproducibility أهم من Robustness",
+            "لا يوجد فرق بينهما"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "MLOps, Deployment & Production Systems",
+          "level": 9,
+          "stem": "عند تصميم نظام MLOps متكامل مع CI/CD pipelines، ما المقايضات بين Canary Deployment و Blue-Green Deployment من حيث المخاطر والسرعة؟",
+          "options": [
+            "Canary أقل خطورة لكن أبطأ لأنه يطرح تدريجياً، Blue-Green أسرع لكن قد يؤثر على جميع المستخدمين إذا حدث خطأ. اختر Canary للمخاطر العالية، Blue-Green للسرعة",
+            "كلاهما نفس الأداء",
+            "Canary دائماً أفضل",
+            "Blue-Green لا يستخدم أبداً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis & Inference",
+          "level": 2,
+          "stem": "ما هو p-value في اختبار الفرضيات الإحصائية؟",
+          "options": [
+            "احتمال الحصول على البيانات المرصودة أو أكثر تطرفاً بافتراض أن الفرضية الصفرية صحيحة",
+            "احتمال أن تكون الفرضية البديلة صحيحة",
+            "متوسط الخطأ في النموذج",
+            "مقياس حجم التأثير"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis & Inference",
+          "level": 4,
+          "stem": "ما الفرق بين Type I Error و Type II Error؟",
+          "options": [
+            "Type I هو رفض الفرضية الصفرية الصحيحة (False Positive)، Type II هو عدم رفض الفرضية الصفرية الخاطئة (False Negative)",
+            "كلاهما نفس الخطأ",
+            "Type I أسوأ من Type II دائماً",
+            "لا فرق بينهما من الناحية العملية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis & Inference",
+          "level": 5,
+          "stem": "في اختبار T-Test، متى تستخدم one-tailed test ومتى تستخدم two-tailed test؟",
+          "options": [
+            "one-tailed عندما تريد اختبار اتجاه محدد (أكبر أو أصغر)، two-tailed عندما تريد اختبار الفرق بشكل عام دون اتجاه محدد",
+            "كلاهما يستخدم في نفس الحالات",
+            "two-tailed دائماً أفضل",
+            "one-tailed لا يستخدم أبداً"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis & Inference",
+          "level": 7,
+          "stem": "ما مشكلة Multiple Comparisons Problem وكيف تؤثر على نتائج الاختبارات الإحصائية المتعددة؟",
+          "options": [
+            "كلما زاد عدد الاختبارات الإحصائية، زاد احتمال الحصول على نتيجة موجبة خاطئة (False Positive). يجب تطبيق تصحيحات مثل Bonferroni",
+            "Multiple Comparisons لا تسبب مشاكل",
+            "عدد الاختبارات لا يؤثر على الأخطاء",
+            "الحل هو إجراء اختبار واحد فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Statistical Analysis & Inference",
+          "level": 9,
+          "stem": "في Bayesian Inference مقابل Frequentist Inference، ما الفرق الفلسفي والعملي في التعامل مع Uncertainty والمعاملات غير المعروفة؟",
+          "options": [
+            "Bayesian يعامل المعاملات كمتغيرات عشوائية لها توزيع احتمالي ويستخدم Prior information، Frequentist يعتبرها ثابتة غير معروفة. Bayesian أفضل مع بيانات قليلة أو prior knowledge، Frequentist أكثر موضوعية",
+            "كلاهما يعطي نفس النتائج دائماً",
+            "Frequentist دائماً أفضل من Bayesian",
+            "Bayesian لا يستخدم في الممارسة الحديثة"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "role": "Security Engineer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Vulnerability Assessment and Penetration Testing",
+          "importance": 150,
+          "startLevel": 4
+        },
+        {
+          "name": "Security Architecture and Design",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "Threat Detection and Incident Response",
+          "importance": 135,
+          "startLevel": 4
+        },
+        {
+          "name": "Identity and Access Management",
+          "importance": 120,
+          "startLevel": 4
+        },
+        {
+          "name": "Secure Coding and Application Security",
+          "importance": 130,
+          "startLevel": 4
+        },
+        {
+          "name": "Security Compliance and Governance",
+          "importance": 110,
+          "startLevel": 4
+        },
+        {
+          "name": "Network and Infrastructure Security",
+          "importance": 125,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Vulnerability Assessment and Penetration Testing",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Vulnerability Assessment و Penetration Testing؟",
+          "options": [
+            "Vulnerability Assessment يكتشف الثغرات بينما Penetration Testing يحاول استغلالها",
+            "Penetration Testing يكتشف الثغرات بينما Vulnerability Assessment يستغلها",
+            "كلاهما متطابق تماماً في الأهداف والطرق",
+            "Vulnerability Assessment يتطلب إذن كتابي بينما Penetration Testing لا يتطلب"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Vulnerability Assessment and Penetration Testing",
+          "level": 4,
+          "stem": "أي من الأدوات التالية تُستخدم بشكل شائع في مرحلة Reconnaissance في اختبار الاختراق؟",
+          "options": [
+            "Nmap و Whois و DNS enumeration",
+            "SQL injection و XSS payload generators",
+            "Metasploit فقط",
+            "Firewalls و IDS systems"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Vulnerability Assessment and Penetration Testing",
+          "level": 5,
+          "stem": "عند إجراء اختبار اختراق، اكتشفت ثغرة في تطبيق ويب لكنها محمية بـ Web Application Firewall. ما أنسب نهج تالي؟",
+          "options": [
+            "توثيق الثغرة وتجاوزها بحذر لمعرفة فعالية الـ WAF",
+            "محاولة تجاوز الـ WAF فوراً لإظهار خطورة الثغرة",
+            "إيقاف الاختبار والإبلاغ عن الخطأ",
+            "استخدام أدوات Bypass متقدمة دون إعلام العميل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Vulnerability Assessment and Penetration Testing",
+          "level": 7,
+          "stem": "في Penetration Testing متقدم، عند اختيار بين الاختبار المفصل الذي يستغرق شهراً وبين السريع الذي يستغرق أسبوع، ما العوامل التي تؤثر على القرار؟",
+          "options": [
+            "نوع الأصول المستهدفة، حجم السطح الهجومي، متطلبات المخاطر، الميزانية",
+            "فقط حجم الميزانية المتاحة",
+            "فقط عدد الموظفين في فريق الاختبار",
+            "فقط التقنيات المستخدمة في الدفاع"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Vulnerability Assessment and Penetration Testing",
+          "level": 9,
+          "stem": "عند تقييم فعالية Vulnerability Assessment program طويل الأجل، أي من المؤشرات التالية يعكس فهماً متقدماً للعائد على الاستثمار؟",
+          "options": [
+            "معدل اكتشاف الثغرات الحرجة قبل أن تستغلها الجهات الخارجية، وتقليل وقت الإصلاح",
+            "العدد الإجمالي للثغرات المكتشفة فقط",
+            "عدد مرات تشغيل الأداة في السنة",
+            "حجم تقارير الثغرات بالميجابايت"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Architecture and Design",
+          "level": 2,
+          "stem": "ما هي فلسفة Zero Trust في معمارية الأمان؟",
+          "options": [
+            "عدم الثقة بأحد افتراضياً وطلب التحقق من كل طلب وصول",
+            "الثقة الكاملة بجميع المستخدمين داخل الشبكة",
+            "الثقة بالمستخدمين فقط على الشبكة الداخلية",
+            "عدم وجود أي آليات للتحقق من الهوية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Architecture and Design",
+          "level": 4,
+          "stem": "في تصميم معمارية آمنة متعددة الطبقات، ما هو الدور الأساسي لـ DMZ؟",
+          "options": [
+            "عزل الخوادم المواجهة للإنترنت عن الشبكة الداخلية",
+            "تسريع جميع اتصالات الشبكة",
+            "تشفير جميع البيانات المارة",
+            "استبدال الـ Firewall بالكامل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Architecture and Design",
+          "level": 5,
+          "stem": "عند تصميم معمارية لنظام موزع على السحابة، أي من الاعتبارات التالية الأكثر أهمية لـ Security by Design؟",
+          "options": [
+            "تقسيم المسؤوليات الأمنية بين المنظمة والمزود، التشفير من النقطة إلى النقطة، التحكم في الوصول متعدد الطبقات",
+            "استخدام أقوى كلمات المرور الممكنة فقط",
+            "إنشاء نسخ احتياطية يومية",
+            "تثبيت أقصى عدد من برامج مكافحة الفيروسات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Architecture and Design",
+          "level": 7,
+          "stem": "عند المقارنة بين معمارية Monolithic وأخرى Microservices من منظور الأمان، ما التحدي الرئيسي الذي يزداد تعقيداً في Microservices؟",
+          "options": [
+            "إدارة نقاط التحقق من الهوية المتعددة والتوثيق بين الخدمات والتشفير للاتصالات بينهم",
+            "تطبيق جدران الحماية الأساسية",
+            "استخدام كلمات مرور قوية",
+            "النسخ الاحتياطي للبيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Architecture and Design",
+          "level": 9,
+          "stem": "في تصميم معمارية Zero Trust متقدمة، كيف يجب معالجة تناقض الأداء مقابل الأمان عند فرض التحقق المستمر على كل معاملة؟",
+          "options": [
+            "استخدام Caching الذكي للبيانات المصرح بها، Context-aware policies، و Adaptive authentication بناءً على المخاطر",
+            "إزالة جميع أشكال التحقق الإضافية لتحسين الأداء",
+            "قبول بطء النظام كثمن للأمان",
+            "العودة إلى نموذج Perimeter security التقليدي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Threat Detection and Incident Response",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Threat Detection و Incident Response؟",
+          "options": [
+            "Threat Detection يكتشف التهديدات بينما Incident Response يتصرف تجاهها",
+            "كلاهما يقوم بنفس العملية",
+            "Incident Response يكتشف التهديدات فقط",
+            "Threat Detection يعالج الحوادث"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Threat Detection and Incident Response",
+          "level": 4,
+          "stem": "أي من أنظمة الكشف التالية يمكنها اكتشاف الأنشطة المريبة بناءً على التوقيعات المعروفة؟",
+          "options": [
+            "Intrusion Detection System (IDS) و Antivirus",
+            "Firewall فقط",
+            "Proxy server فقط",
+            "VPN فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Threat Detection and Incident Response",
+          "level": 5,
+          "stem": "أثناء حادثة أمنية، اكتشفت نشاطاً غير عادي من حساب موظف يمثل Lateral movement. ما الخطوة الأولى الأنسب في الاستجابة؟",
+          "options": [
+            "عزل الحساب والجهاز عن الشبكة فوراً مع بدء التحقيق",
+            "حذف الحساب فوراً",
+            "إرسال بريد تحذير للموظف",
+            "متابعة النشاط دون تدخل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Threat Detection and Incident Response",
+          "level": 7,
+          "stem": "في خطة Incident Response، عند التعامل مع هجوم متقدم يشمل Data exfiltration، ما الاعتبارات الحرجة لـ Containment؟",
+          "options": [
+            "توازن بين إيقاف الهجوم وحفظ الأدلة، العزل الجزئي لمنع الانتشار دون تنبيه المهاجم",
+            "قطع الإنترنت بالكامل فوراً",
+            "إهمال حفظ الأدلة",
+            "السماح للهجوم بالاستمرار لمراقبته"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Threat Detection and Incident Response",
+          "level": 9,
+          "stem": "عند تحليل حادثة متقدمة يشتبه فيها بـ Advanced Persistent Threat (APT)، كيف تقيّم ما إذا كان الكشف الأولي حقيقياً أم False positive مع ضمان عدم تفويت التهديد الفعلي؟",
+          "options": [
+            "تحليل متعدد الطبقات: السلوك، الأنماط، آثار التأثير المحتملة، وربط المؤشرات بنشاط معروف",
+            "الاعتماد على تنبيه واحد فقط",
+            "تجاهل التنبيهات التي تبدو معقدة",
+            "الثقة الكاملة بالأنظمة الآلية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Identity and Access Management",
+          "level": 2,
+          "stem": "ما هو الفرق الأساسي بين Authentication و Authorization؟",
+          "options": [
+            "Authentication تتحقق من هويتك وAuthorization تحدد ما يمكنك فعله",
+            "كلاهما تفعل نفس الشيء",
+            "Authorization تتحقق من الهوية",
+            "Authentication تحدد الصلاحيات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Identity and Access Management",
+          "level": 4,
+          "stem": "أي من طرق المصادقة التالية يوفر مستوى حماية أعلى من استخدام كلمة المرور وحدها؟",
+          "options": [
+            "Multi-factor Authentication (MFA) باستخدام عامل ثاني مثل TOTP أو Biometric",
+            "إعادة تعيين كلمة المرور كل شهر",
+            "استخدام أسماء مستخدمة طويلة",
+            "تسجيل كلمات المرور في ملف نصي"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Identity and Access Management",
+          "level": 5,
+          "stem": "عند تنفيذ نظام IAM لمؤسسة كبيرة، أي من المبادئ التالية الأهم تطبيقاً؟",
+          "options": [
+            "Principle of Least Privilege مع المراجعة الدورية والإزالة المنتظمة للصلاحيات غير المستخدمة",
+            "منح جميع المستخدمين نفس الصلاحيات",
+            "عدم تغيير الصلاحيات بعد المنح الأولي",
+            "السماح بمشاركة الحسابات بين الموظفين"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Identity and Access Management",
+          "level": 7,
+          "stem": "عند تصميم نظام IAM يدعم SSO و MFA، ما التحدي الرئيسي في الموازنة بين الأمان والتجربة؟",
+          "options": [
+            "تقليل عدد خطوات المصادقة دون التضحية بـ Security posture عبر Risk-based authentication",
+            "جعل كل عملية مصادقة بطيئة قدر الإمكان",
+            "إزالة MFA لتحسين تجربة المستخدم",
+            "عدم استخدام SSO لتقليل المخاطر"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Identity and Access Management",
+          "level": 9,
+          "stem": "في نظام IAM متقدم يتعامل مع Federated identity across multiple organizations، كيف تدير Trust relationships مع ضمان عدم سوء استخدام Transitive trust؟",
+          "options": [
+            "تحديد واضح لـ Trust boundaries، توثيق Federated partners، Continuous monitoring للنشاط عبر المجالات، و Conditional access policies",
+            "الثقة الكاملة بجميع المنظمات الموثوقة",
+            "تعطيل جميع الوصول الموحد",
+            "عدم مراقبة نشاط الشركاء"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Secure Coding and Application Security",
+          "level": 2,
+          "stem": "ما هي ثغرة SQL Injection وكيف يمكن أن تؤثر على التطبيق؟",
+          "options": [
+            "حقن كود SQL ضار لتجاوز المنطق والوصول لبيانات غير مصرح بها",
+            "فشل في تحديث قاعدة البيانات",
+            "بطء في الاستعلامات",
+            "فقدان الاتصال بقاعدة البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Secure Coding and Application Security",
+          "level": 4,
+          "stem": "أي من طرق الوقاية التالية الأكثر فعالية ضد SQL Injection؟",
+          "options": [
+            "استخدام Parameterized Queries أو Prepared Statements",
+            "فحص المدخلات من قبل المستخدم يدوياً",
+            "استخدام التشفير على الاستعلامات",
+            "تقليل عدد حقول الإدخال"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Secure Coding and Application Security",
+          "level": 5,
+          "stem": "عند مراجعة كود تطبيق ويب، وجدت أن بيانات المستخدم تُعرض مباشرة في الاستجابة دون معالجة. ما الثغرة المحتملة والحل؟",
+          "options": [
+            "ثغرة Cross-site Scripting (XSS)، والحل هو Output encoding وتطبيق Content Security Policy",
+            "مشكلة في الأداء فقط",
+            "خطأ في اتصال الشبكة",
+            "مشكلة في تصميم قاعدة البيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Secure Coding and Application Security",
+          "level": 7,
+          "stem": "في تطوير تطبيق يتعامل مع معلومات حساسة، كيف تختار بين Hash و Encryption للبيانات المخزنة؟",
+          "options": [
+            "استخدم Hash للبيانات التي لا تحتاج استرجاعها (مثل الكلمات المرورية)، و Encryption للبيانات التي تحتاج للوصول إليها لاحقاً",
+            "استخدم التشفير لكل شيء",
+            "استخدم Hash لكل شيء",
+            "لا تشفر ولا تهش أي بيانات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Secure Coding and Application Security",
+          "level": 9,
+          "stem": "عند تصميم نظام معالجة دفع آمن، كيف توازن بين الوظائف والأمان عند التعامل مع بيانات بطاقات الائتمان؟",
+          "options": [
+            "عدم تخزين بيانات البطاقة الحساسة، استخدام Tokenization مع خدمة دفع معتمدة، تشفير النقل، و PCI-DSS compliance",
+            "تخزين بيانات البطاقة الكاملة في قاعدة البيانات",
+            "نقل البيانات بدون تشفير",
+            "تجنب استخدام خدمات الدفع المعتمدة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Compliance and Governance",
+          "level": 2,
+          "stem": "ما هو الغرض الأساسي من معايير الامتثال الأمني مثل ISO 27001 و GDPR؟",
+          "options": [
+            "ضمان حماية البيانات واتباع متطلبات قانونية موحدة",
+            "تسريع جميع عمليات الأعمال",
+            "تقليل كمية البيانات المخزنة",
+            "إزالة جميع الأنظمة الأمنية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Compliance and Governance",
+          "level": 4,
+          "stem": "أي من العناصر التالية يجب أن تتضمنها سياسة الأمان الشاملة للمنظمة؟",
+          "options": [
+            "إدارة الأصول، التحكم في الوصول، تصنيف البيانات، والاستجابة للحوادث",
+            "فقط كلمات المرور القوية",
+            "فقط التحديثات المنتظمة",
+            "فقط التدريب على أساسيات الأمان"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Compliance and Governance",
+          "level": 5,
+          "stem": "عند التحضير لتدقيق أمني ISO 27001، ما أهم التحضيرات التي يجب إكمالها مسبقاً؟",
+          "options": [
+            "توثيق جميع السياسات والإجراءات، إجراء فجوة تقييمية، توظيف مسؤول أمان معتمد",
+            "فقط شراء أدوات أمان جديدة",
+            "إغلاق جميع الأنظمة القديمة",
+            "توقيع عقود مع بائعي أمان"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Compliance and Governance",
+          "level": 7,
+          "stem": "عند إدارة GDPR compliance في مؤسسة متعددة الدول، ما التحديات الرئيسية في Governance؟",
+          "options": [
+            "اختلافات القوانين المحلية، تعقيد تتبع البيانات الشخصية، ضمان حقوق الأفراد، و Data residency requirements",
+            "فقط نسخ احتياطي البيانات",
+            "فقط التشفير في النقل",
+            "فقط التحديثات السنوية للسياسات"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Security Compliance and Governance",
+          "level": 9,
+          "stem": "في تصميم برنامج Compliance الشامل الذي يعالج ISO 27001 و GDPR و SOC 2 معاً، كيف تتجنب Compliance fatigue مع ضمان فعالية حقيقية؟",
+          "options": [
+            "دمج المتطلبات المشتركة في عمليات واحدة، استخدام Maturity models للقياس المستمر، توثيق الهدف التجاري خلف كل متطلب",
+            "تطبيق كل معيار بشكل منفصل تماماً",
+            "اختيار المعيار الأقل صرامة فقط",
+            "تجنب التدقيقات الدورية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Network and Infrastructure Security",
+          "level": 2,
+          "stem": "ما هو الدور الأساسي لـ Firewall في أمان الشبكة؟",
+          "options": [
+            "التحكم في تدفق حركة المرور بناءً على القواعس المحددة",
+            "تشفير جميع البيانات المارة",
+            "حذف جميع الفيروسات تلقائياً",
+            "مشاركة البيانات مع جميع المستخدمين"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Network and Infrastructure Security",
+          "level": 4,
+          "stem": "أي من الأدوات التالية تُستخدم لكشف المحاولات غير المصرح بها للدخول إلى الشبكة؟",
+          "options": [
+            "Intrusion Detection System (IDS) أو Intrusion Prevention System (IPS)",
+            "DHCP server فقط",
+            "DNS resolver فقط",
+            "Proxy server فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Network and Infrastructure Security",
+          "level": 5,
+          "stem": "عند تصميم شبكة آمنة للمؤسسة، كيف يمكن عزل أنظمة حساسة عن الشبكة العامة؟",
+          "options": [
+            "استخدام VLANs وFirewalls داخلية وكنترول وصول صارم على أساس دور المستخدم",
+            "فصل الأسلاك الفيزيائية فقط",
+            "استخدام كلمات مرور قوية فقط",
+            "عدم تطبيق أي تدابير عزل"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Network and Infrastructure Security",
+          "level": 7,
+          "stem": "في بيئة شبكة كبيرة مع متطلبات High availability و Security عالية، ما تحديات تطبيق Network segmentation؟",
+          "options": [
+            "الموازنة بين الحماية والأداء، إدارة القواعد المعقدة، مراقبة حركة المرور بين المقاطع",
+            "فقط اختيار Firewall واحد قوي",
+            "عدم وجود أي تحديات",
+            "تجنب الفحص العميق للحزم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Network and Infrastructure Security",
+          "level": 9,
+          "stem": "عند تصميم Defense in Depth متقدم لبنية تحتية معقدة متعددة المراكز، كيف تنسق بين الـ Perimeter security والـ Internal controls مع الحفاظ على Visibility عبر الكل؟",
+          "options": [
+            "Distributed sensors و Centralized logging، التحليل المترابط، Orchestrated responses عبر الطبقات",
+            "نظام واحد مركزي يتحكم بكل شيء",
+            "فصل كامل بين أنظمة كل مركز",
+            "عدم وجود حركة مرور بين المراكز"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "role": "Product Manager",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "Product Vision and Strategic Thinking",
+          "importance": 120,
+          "startLevel": 4
+        },
+        {
+          "name": "Customer Research and User Discovery",
+          "importance": 110,
+          "startLevel": 4
+        },
+        {
+          "name": "Requirements Definition and Prioritization",
+          "importance": 120,
+          "startLevel": 5
+        },
+        {
+          "name": "Data-Driven Decision Making and Analytics",
+          "importance": 100,
+          "startLevel": 4
+        },
+        {
+          "name": "Stakeholder Management and Cross-functional Leadership",
+          "importance": 115,
+          "startLevel": 5
+        },
+        {
+          "name": "Product Launch and Go-to-Market Strategy",
+          "importance": 105,
+          "startLevel": 4
+        },
+        {
+          "name": "Market and Competitive Analysis",
+          "importance": 90,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "Product Vision and Strategic Thinking",
+          "level": 2,
+          "stem": "ما الفرق الأساسي بين رؤية المنتج Product Vision والهدف التجاري Business Goal؟",
+          "options": [
+            "الرؤية تحدد الاتجاه طويل الأجل، بينما الهدف التجاري يركز على إنجازات قصيرة الأجل",
+            "كلاهما نفس الشيء تماماً",
+            "الرؤية تتعلق بالتكنولوجيا فقط",
+            "الهدف التجاري لا يتطلب رؤية واضحة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Product Vision and Strategic Thinking",
+          "level": 4,
+          "stem": "إذا كانت رؤية منتجك هي جعل العمل الحر متاحاً للجميع، أي من الخطوات التالية تساهم مباشرة في تحقيق هذه الرؤية؟",
+          "options": [
+            "إضافة المزيد من الأيقونات إلى واجهة المستخدم",
+            "تقليل رسوم المنصة للعاملين بالعمل الحر",
+            "زيادة سعر الاشتراكات المدفوعة",
+            "إغلاق جميع قنوات الدعم الأخرى"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Vision and Strategic Thinking",
+          "level": 5,
+          "stem": "عند تطوير استراتيجية منتج، ما دور Strategic Roadmap بالنسبة للرؤية؟",
+          "options": [
+            "تستبدل الرؤية تماماً",
+            "توضح كيف سيتم تحقيق الرؤية من خلال مراحل زمنية محددة",
+            "لا علاقة لها برؤية المنتج",
+            "تركز فقط على الأرباح المالية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Vision and Strategic Thinking",
+          "level": 7,
+          "stem": "إذا أدت الرؤية طويلة الأجل للمنتج إلى تضارب مع أهداف مالية قصيرة الأجل للشركة، كيف يجب على مدير المنتج التعامل معها؟",
+          "options": [
+            "تجاهل الأهداف المالية تماماً والتركيز على الرؤية فقط",
+            "إعادة صياغة الرؤية بحيث تطابق الأهداف المالية الحالية",
+            "إيجاد توازن يحافظ على الرؤية الأساسية مع تحقيق نقاط مالية محددة",
+            "اختيار أحدهما دون النظر للآخر"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Product Vision and Strategic Thinking",
+          "level": 9,
+          "stem": "في سيناريو منافس يقدم ميزات تتناقض مع رؤيتك الأساسية لكنها تجذب مستخدمين كثيرين، كيف يتعامل مدير منتج استراتيجي معها؟",
+          "options": [
+            "نسخ الميزات فوراً بغض النظر عن التأثير على الرؤية",
+            "تحليل ما إذا كانت الميزات تقوي السوق أم تعكس نقصاً في رؤيتك، ودراسة تأثيرها على هويتك التنافسية",
+            "تجاهل الميزات والاستمرار بلا تقييم",
+            "التخلي عن الرؤية الأساسية لتتبع اتجاهات السوق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Customer Research and User Discovery",
+          "level": 2,
+          "stem": "ما الطريقة الأساسية لجمع المعلومات المباشرة من المستخدمين الحقيقيين؟",
+          "options": [
+            "User Interviews",
+            "تخمين احتياجات المستخدمين بناءً على آرائك",
+            "الاعتماد على البيانات المالية فقط",
+            "سؤال فريق المبيعات دون التحدث للمستخدمين"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Customer Research and User Discovery",
+          "level": 4,
+          "stem": "عند إجراء User Interview، ماذا يجب أن تتجنب للحصول على معلومات دقيقة؟",
+          "options": [
+            "طرح أسئلة مفتوحة تشجع على التفاصيل",
+            "طرح أسئلة موجهة توحي بالإجابة التي تريدها",
+            "الاستماع الفعلي لإجابات المستخدمين",
+            "تسجيل الجلسة للعودة إليها لاحقاً"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Customer Research and User Discovery",
+          "level": 5,
+          "stem": "ما الفرق بين User Testing و User Research من حيث الأهداف؟",
+          "options": [
+            "كلاهما متطابق تماماً",
+            "User Research يستكشف الاحتياجات والسلوكيات، بينما User Testing يختبر حلاً محدداً",
+            "User Testing أرخص بكثير من User Research",
+            "User Research لا يساهم في تطوير المنتج"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Customer Research and User Discovery",
+          "level": 7,
+          "stem": "إذا أظهرت نتائج البحث عن المستخدمين تضاربات كبيرة في السلوك بين مجموعات مختلفة، كيف يجب على مدير المنتج التعامل معها؟",
+          "options": [
+            "اختيار الأكثرية بغض النظر عن الأقلية",
+            "تجاهل البيانات المتضاربة وافتراض خطأ في البحث",
+            "تقسيم المستخدمين إلى Personas مختلفة وتطوير استراتيجيات منفصلة لكل مجموعة",
+            "الاستسلام وعدم تطوير المنتج"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Customer Research and User Discovery",
+          "level": 9,
+          "stem": "البحث الكمي Quantitative يشير لحاجة ميزة معينة، لكن البحث النوعي Qualitative يظهر عدم استخدامهم لها، كيف يتم تقييم التضارب؟",
+          "options": [
+            "الاعتماد الكامل على البيانات الكمية وتجاهل النوعية",
+            "تحليل السياق والدوافع النفسية للمستخدمين واستكشاف الفجوة بين ما يقولونه وما يفعلونه",
+            "اختيار البيانات التي تدعم فرضيتك المسبقة",
+            "إيقاف أي عمل حتى تحصل على توافق تام"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Requirements Definition and Prioritization",
+          "level": 2,
+          "stem": "ما هي Functional Requirement (المتطلب الوظيفي)؟",
+          "options": [
+            "متطلب يصف شكل وحجم المنتج",
+            "متطلب يصف ما يجب أن يفعله المنتج بالفعل",
+            "متطلب متعلق بالمظهر فقط",
+            "متطلب يتجاهل احتياجات المستخدمين"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Requirements Definition and Prioritization",
+          "level": 4,
+          "stem": "أي من الأدوات التالية تساعد بشكل أفضل في ترتيب الميزات حسب الأهمية والتأثير؟",
+          "options": [
+            "MoSCoW Method",
+            "عرض جميع الميزات دفعة واحدة",
+            "اختيار الميزات بناءً على آراء الإدارة فقط",
+            "إضافة كل ميزة يطلبها أي مستخدم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Requirements Definition and Prioritization",
+          "level": 5,
+          "stem": "في منهجية Agile، ما دور Product Backlog في عملية تعريف المتطلبات وترتيبها؟",
+          "options": [
+            "مجرد قائمة عشوائية من الأفكار",
+            "قائمة منظمة ومرتبة حسب الأولوية تعكس رؤية المنتج والاحتياجات",
+            "قائمة ثابتة لا تتغير أبداً",
+            "أداة للإدارة المالية فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Requirements Definition and Prioritization",
+          "level": 7,
+          "stem": "عند تلقي طلبات متضاربة من عملاء وقيود تقنية تحد الإمكانيات، كيف يتعامل مدير المنتج؟",
+          "options": [
+            "اختيار الميزات التي توفر أكبر قيمة للأغلبية مع الموازنة بين قيمة العمل والجهد التقني",
+            "تنفيذ جميع الطلبات بغض النظر عن القيود",
+            "رفض جميع الطلبات دون تقييم",
+            "السماح للفريق التقني بتحديد الأولويات دون مشاركة المستخدم"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Requirements Definition and Prioritization",
+          "level": 9,
+          "stem": "إضافة ميزة ذات أولوية عالية تؤخر ميزة ذات تأثير استراتيجي طويل الأجل، كيف يقرر مدير المنتج؟",
+          "options": [
+            "اختيار الميزة ذات الأولوية العالية فوراً دون تقييم الآثار",
+            "تقييم استراتيجي شامل يأخذ في الاعتبار أهداف السوق ودورة حياة المنتج وموقع المنافسين",
+            "تأجيل القرار إلى أجل غير مسمى",
+            "الاستجابة فقط لاحتياجات العملاء الحاليين دون النظر للمستقبل"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Data-Driven Decision Making and Analytics",
+          "level": 2,
+          "stem": "ما أهمية KPIs (مؤشرات الأداء الرئيسية) في إدارة المنتج؟",
+          "options": [
+            "تساعد في قياس ما إذا كان المنتج يحقق أهدافه",
+            "لا فائدة منها في الإدارة الحديثة",
+            "تستخدم فقط من قبل فريق التسويق",
+            "تركز على الجماليات فقط"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Data-Driven Decision Making and Analytics",
+          "level": 4,
+          "stem": "أي من الخطوات التالية جزء أساسي من عملية اتخاذ قرار مبني على البيانات؟",
+          "options": [
+            "جمع البيانات ثم تطبيق القرار مباشرة دون تحليل",
+            "جمع البيانات، تحليلها، صياغة فرضية، واختبارها قبل تطبيق القرار",
+            "الاعتماد على الحدس فقط",
+            "تجاهل البيانات والاستماع لآخر من تقابلهم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Data-Driven Decision Making and Analytics",
+          "level": 5,
+          "stem": "ما الفرق بين Vanity Metrics و Actionable Metrics في تقييم أداء المنتج؟",
+          "options": [
+            "لا يوجد فرق بينهما",
+            "Vanity Metrics تبدو جيدة لكنها لا توفر رؤى قابلة للتطبيق، بينما Actionable Metrics توجه القرارات الفعلية",
+            "Actionable Metrics أقل أهمية من Vanity Metrics",
+            "كلاهما يقيس نفس الشيء"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Data-Driven Decision Making and Analytics",
+          "level": 7,
+          "stem": "البيانات تظهر تراجعاً في Engagement لكن زيادة في Revenue، كيف يفسر مدير المنتج التضارب؟",
+          "options": [
+            "التركيز على Revenue فقط وتجاهل Engagement",
+            "افتراض أن البيانات خاطئة",
+            "البحث عن الأسباب الجذرية للتغيرات في كلا المؤشرين والنظر في التأثيرات طويلة الأجل على الاحتفاظ",
+            "الاستسلام والتوقف عن تجميع البيانات"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Data-Driven Decision Making and Analytics",
+          "level": 9,
+          "stem": "في A/B Test، النتائج الإحصائية محدودة لكن Qualitative Feedback قوي للحل الجديد، كيف يقرر؟",
+          "options": [
+            "رفض التغيير لأن الإحصائيات ليست قوية كفاية",
+            "قبول التغيير فوراً بناءً على الآراء فقط",
+            "تحليل حجم التأثير ومستوى الثقة الإحصائية والتكاليف مقابل الفوائد المتوقعة",
+            "إعادة التجربة مع تعديلات دون تحليل النتائج الحالية"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Stakeholder Management and Cross-functional Leadership",
+          "level": 2,
+          "stem": "من هم Stakeholders في إدارة المنتج؟",
+          "options": [
+            "فقط فريق المبيعات",
+            "جميع الأشخاص المتأثرين بالمنتج، بما في ذلك المستخدمين والإدارة والفريق التقني والعملاء",
+            "فقط الإدارة العليا",
+            "فقط قسم التسويق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Stakeholder Management and Cross-functional Leadership",
+          "level": 4,
+          "stem": "ما الدور الأساسي لمدير المنتج عند التعامل مع تضارب مصالح بين فريق التطوير والمبيعات؟",
+          "options": [
+            "جانب فريق التطوير دائماً",
+            "جانب المبيعات دائماً",
+            "الاستماع لكلا الطرفين وإيجاد حل يوازن بين التطبيقية والقيمة التجارية",
+            "تجاهل الصراع تماماً"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Stakeholder Management and Cross-functional Leadership",
+          "level": 5,
+          "stem": "كيف يبني مدير المنتج تأيداً من فريق متعدد الوظائف لرؤية جديدة؟",
+          "options": [
+            "فرض الرؤية من الأعلى دون نقاش",
+            "شرح الرؤية، استقبال المدخلات من جميع الفرق، وتعديل الخطة بناءً على مدخلاتهم",
+            "إبقاء الرؤية سراً عن الفريق",
+            "اختيار فريق واحد فقط للعمل على الرؤية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Stakeholder Management and Cross-functional Leadership",
+          "level": 7,
+          "stem": "عميل كبير له طلب يتعارض مع الخطة الحالية والموارد محدودة، كيف يتعامل مدير المنتج؟",
+          "options": [
+            "قبول الطلب فوراً لإرضاء العميل",
+            "رفض الطلب بشكل مطلق دون الاستماع",
+            "تقييم التأثير على الخطة والمنتج، التفاوض على الأولويات، وإيجاد حل متوازن",
+            "تمرير القرار كاملاً للعميل"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Stakeholder Management and Cross-functional Leadership",
+          "level": 9,
+          "stem": "مجموعات stakeholders متعددة برؤى متضاربة وسلطات نفوذ مختلفة، كيف تتنقل مدير منتج كفؤ؟",
+          "options": [
+            "تجنب النقاشات الصعبة والاستسلام",
+            "بناء تحالفات استراتيجية وفهم حوافز كل طرف والبحث عن نقاط مشتركة تحقق القيمة الأساسية",
+            "اختيار طرف واحد وتجاهل الآخرين",
+            "التصعيد الفوري لجميع الخلافات للإدارة العليا"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Launch and Go-to-Market Strategy",
+          "level": 2,
+          "stem": "ما هي Go-to-Market Strategy (استراتيجية الدخول للسوق)؟",
+          "options": [
+            "خطة تفصيلية لكيفية إطلاق وتسويق المنتج للوصول للعملاء",
+            "أسلوب للعثور على مكتب جديد",
+            "عملية شراء معدات مكتبية",
+            "قائمة بالموظفين الجدد"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Product Launch and Go-to-Market Strategy",
+          "level": 4,
+          "stem": "أي عناصر يجب أن تتضمنها استراتيجية الدخول للسوق الفعالة؟",
+          "options": [
+            "فقط اسم المنتج",
+            "الجمهور المستهدف والموقع التنافسي والقنوات الترويجية والمقاييس الواضحة للنجاح",
+            "سعر عشوائي",
+            "عدم التخطيط على الإطلاق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Launch and Go-to-Market Strategy",
+          "level": 5,
+          "stem": "ما الفرق بين Launch Strategy و Post-Launch Strategy؟",
+          "options": [
+            "لا يوجد فرق بينهما",
+            "Launch Strategy تركز على الإطلاق الأولي بينما Post-Launch تركز على النمو والاحتفاظ والتحسين",
+            "Post-Launch Strategy أقل أهمية",
+            "كلاهما يحدث في نفس الوقت"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Launch and Go-to-Market Strategy",
+          "level": 7,
+          "stem": "إطلاق منتج جديد في سوق مشبعة بمنافسين قويين، كيف تصمم استراتيجية دخول مختلفة؟",
+          "options": [
+            "محاولة تقليد جميع المنافسين",
+            "فهم نقاط ضعفهم والبحث عن قطاع غير مخدوم واستهدافه بقوة",
+            "إطلاق المنتج برسالة ضعيفة",
+            "تأجيل الإطلاق للأبد"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Product Launch and Go-to-Market Strategy",
+          "level": 9,
+          "stem": "اختيار بين إطلاق سريع مع ميزات محدودة أو إطلاق متأخر مع ميزات شاملة، كيف يقرر؟",
+          "options": [
+            "الإطلاق السريع دائماً بغض النظر عن الجودة",
+            "الانتظار لأجل غير مسمى للمزيد من الميزات",
+            "تحليل سرعة السوق والمنافسين ورغبات المستخدمين المبكرين والمخاطر التنافسية",
+            "ترك القرار كاملاً لفريق التسويق"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "topicName": "Market and Competitive Analysis",
+          "level": 2,
+          "stem": "ما هي SWOT Analysis؟",
+          "options": [
+            "أداة تحلل نقاط القوة والضعف والفرص والتهديدات للمنتج أو الشركة",
+            "نوع من أنواع الطعام",
+            "لغة برمجة",
+            "نظام لإدارة الموارد البشرية"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Market and Competitive Analysis",
+          "level": 4,
+          "stem": "عند تحليل المنافسين، أي جوانب يجب أن تركز عليها؟",
+          "options": [
+            "فقط أسماؤهم",
+            "ميزاتهم وسعرهم واستراتيجيتهم في التسويق ونقاط قوتهم وضعفهم",
+            "عدد الموظفين فقط",
+            "عناوين مكاتبهم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Market and Competitive Analysis",
+          "level": 5,
+          "stem": "ما دور Market Segmentation في فهم السوق والمنافسة؟",
+          "options": [
+            "لا تؤثر على تحليل المنافسة",
+            "تساعد في تقسيم السوق إلى مجموعات مع احتياجات مختلفة مما يسمح بفهم أفضل للمنافسة",
+            "تقسيم المنافسين فقط",
+            "تركز على الأسعار فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Market and Competitive Analysis",
+          "level": 7,
+          "stem": "منافس جديد قد يدخل السوق بسعر أقل وميزات مشابهة، كيف يستجيب مدير المنتج؟",
+          "options": [
+            "خفض السعر فوراً لمطابقة التهديد",
+            "تقييم الفرق الحقيقي في القيمة وتعزيز نقاط التمايز وتطوير ميزات تصعب النسخ",
+            "تجاهل التهديد تماماً",
+            "الاستسلام والتوقف عن العمل"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Market and Competitive Analysis",
+          "level": 9,
+          "stem": "بيئة سوقية ديناميكية مع تغير تكنولوجي سريع ومنافسة متزايدة، كيف تبني استراتيجية طويلة الأجل مرنة؟",
+          "options": [
+            "التخطيط الكامل الآن والتنفيذ دون تعديلات",
+            "عدم التخطيط والاستجابة العشوائية للتغييرات",
+            "بناء خطة استراتيجية متينة مع مراجعة منتظمة ومراقبة السوق والمرونة للتعديل",
+            "اتباع كل حركة يقومها المنافسون"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "role": "UX Designer",
+      "language": "ar",
+      "topics": [
+        {
+          "name": "User Research and Discovery",
+          "importance": 180,
+          "startLevel": 5
+        },
+        {
+          "name": "Interaction Design and User Flows",
+          "importance": 170,
+          "startLevel": 6
+        },
+        {
+          "name": "Visual and Interface Design",
+          "importance": 170,
+          "startLevel": 6
+        },
+        {
+          "name": "Information Architecture and Wireframing",
+          "importance": 150,
+          "startLevel": 5
+        },
+        {
+          "name": "Usability Testing and Validation",
+          "importance": 140,
+          "startLevel": 4
+        },
+        {
+          "name": "Digital Prototyping and Design Tools",
+          "importance": 140,
+          "startLevel": 6
+        },
+        {
+          "name": "Accessibility and Inclusive Design",
+          "importance": 130,
+          "startLevel": 3
+        },
+        {
+          "name": "Communication and Design Strategy",
+          "importance": 120,
+          "startLevel": 4
+        }
+      ],
+      "bank": [
+        {
+          "topicName": "User Research and Discovery",
+          "level": 2,
+          "stem": "ما الهدف الأساسي من البحث عن المستخدمين في تصميم تجربة المستخدم؟",
+          "options": [
+            "فهم احتياجات وسلوكيات المستخدمين",
+            "اختيار أفضل الألوان للموقع",
+            "زيادة عدد الزوار إلى التطبيق",
+            "إنشاء قوالب تصميم جاهزة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "User Research and Discovery",
+          "level": 4,
+          "stem": "أي من الطرق التالية تعتبر طريقة كمية لجمع بيانات المستخدمين؟",
+          "options": [
+            "المقابلات المعمقة",
+            "الاستطلاعات الإحصائية",
+            "جلسات التركيز Focus Groups",
+            "ملاحظة المستخدم المباشرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "User Research and Discovery",
+          "level": 5,
+          "stem": "متى يكون استخدام طريقة البحث النوعي Qualitative أكثر فعالية من الكمي Quantitative؟",
+          "options": [
+            "عندما تحتاج لأرقام إحصائية دقيقة",
+            "عندما تريد فهم الدوافع والمشاعر الأساسية للمستخدمين",
+            "عندما تختبر فرضيات محددة مسبقا",
+            "عندما تحتاج نتائج تمثل العدد الأكبر من السكان"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "User Research and Discovery",
+          "level": 7,
+          "stem": "ما التحدي الرئيسي في الاعتماد على البحث النوعي وحده دون التحقق الكمي؟",
+          "options": [
+            "تكاليفه العالية جدا",
+            "قد لا تكون الأنماط المكتشفة تمثل السكان الأوسع",
+            "يستغرق وقتا أقل من البحث الكمي",
+            "لا يمكن استخدامه مع مجموعات كبيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "User Research and Discovery",
+          "level": 9,
+          "stem": "عند تصميم دراسة بحثية متعددة الطرق Mixed Methods، ما الخطأ الشائع الذي يقلل من فعاليتها؟",
+          "options": [
+            "جمع البيانات النوعية أولا ثم الكمية",
+            "عدم تكامل النتائج من الطريقتين بشكل منطقي في التحليل",
+            "استخدام عينة صغيرة في المرحلة الكمية",
+            "استجواب المشاركين عن افتراضاتهم المسبقة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Interaction Design and User Flows",
+          "level": 2,
+          "stem": "ما المقصود بـ User Flow في تصميم التفاعل؟",
+          "options": [
+            "تسلسل الخطوات التي يتخذها المستخدم لإكمال مهمة معينة",
+            "عدد الزيارات الشهرية للتطبيق",
+            "قائمة الميزات الجديدة المضافة",
+            "سرعة تحميل الصفحة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Interaction Design and User Flows",
+          "level": 4,
+          "stem": "أي من العناصر التالية يجب أن يتضمنها User Flow الفعال؟",
+          "options": [
+            "الألوان والخطوط المستخدمة",
+            "نقاط القرار والمسارات البديلة",
+            "عدد الموظفين في فريق التطوير",
+            "تكلفة خادم الاستضافة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Interaction Design and User Flows",
+          "level": 5,
+          "stem": "عند تصميم تدفق تفاعلي لعملية الدفع، ما أفضل ممارسة؟",
+          "options": [
+            "إخفاء كل المعلومات المطلوبة حتى الخطوة الأخيرة",
+            "تقسيم العملية إلى خطوات واضحة مع توضيح التقدم",
+            "السماح للمستخدم بتخطي أي خطوة يريدها",
+            "استخدام نفس التصميم لجميع خطوات العملية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Interaction Design and User Flows",
+          "level": 7,
+          "stem": "كيف يؤثر وجود خطوات إجبارية إضافية في User Flow على سلوك المستخدم؟",
+          "options": [
+            "يزيد الثقة بالنظام دائما",
+            "قد يزيد من معدل الهجر Abandonment خاصة إذا لم تكن ذات قيمة واضحة",
+            "لا يؤثر على السلوك إطلاقا",
+            "يحسن دائما من تجربة المستخدم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Interaction Design and User Flows",
+          "level": 9,
+          "stem": "ما الفرق الحرج بين تصميم User Flow للمستخدمين الجدد مقابل المتكررين؟",
+          "options": [
+            "المستخدمون الجدد لا يحتاجون إلى تعليمات",
+            "المتكررون قد لا يحتملون الخطوات التوضيحية الطويلة التي يقدرها الجدد",
+            "التصميم يجب أن يكون متطابقا للجميع",
+            "المستخدمون الجدد فقط هم من يستخدمون التطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Visual and Interface Design",
+          "level": 2,
+          "stem": "ما الدور الأساسي للتسلسل الهرمي البصري Hierarchy في التصميم؟",
+          "options": [
+            "توجيه انتباه المستخدم نحو العناصر الأكثر أهمية",
+            "زيادة حجم جميع النصوص",
+            "استخدام أكبر عدد من الألوان المختلفة",
+            "تقليل عدد الأزرار في الواجهة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Visual and Interface Design",
+          "level": 4,
+          "stem": "أي من الخيارات التالية هي أداة بصرية صحيحة لإنشاء تسلسل هرمي؟",
+          "options": [
+            "الحجم والاتجاه والمسافة",
+            "عدد كلمات الصفحة",
+            "عدد الموظفين المشاركين",
+            "سنة إنشاء التطبيق"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Visual and Interface Design",
+          "level": 5,
+          "stem": "لماذا يعتبر التباين اللوني Contrast مهما في تصميم الواجهات؟",
+          "options": [
+            "لجعل التصميم أكثر ملونا وجمالا",
+            "لتحسين قابلية القراءة والوضوح خاصة لمن يعانون من ضعف البصر",
+            "لتقليل حجم ملف التصميم",
+            "لتسريع وقت تحميل الصفحة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Visual and Interface Design",
+          "level": 7,
+          "stem": "كيف يمكن أن يؤدي استخدام الكثير من العناصر البصرية المختلفة إلى تجربة سيئة؟",
+          "options": [
+            "يجعل الموقع يبدو احترافيا أكثر",
+            "قد يسبب تشتت ذهني Cognitive Load عالي ويقلل من استيعاب المستخدم",
+            "لا يؤثر على التجربة على الإطلاق",
+            "يسرع تحميل الصفحة دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Visual and Interface Design",
+          "level": 9,
+          "stem": "في سياق التصميم الشامل Inclusive، ما المشكلة في الاعتماد الكلي على اللون وحده للتمييز بين العناصر؟",
+          "options": [
+            "يقلل من جمال التصميم",
+            "المستخدمون الذين يعانون من عمى الألوان Color Blindness لن يتمكنوا من التمييز بينها",
+            "يزيد تكاليف التطوير",
+            "لا توجد مشكلة في ذلك"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Information Architecture and Wireframing",
+          "level": 2,
+          "stem": "ما الهدف الأساسي من عمل Wireframe في بداية المشروع؟",
+          "options": [
+            "إظهار الألوان والأيقونات النهائية",
+            "توضيح هيكل الصفحة وتخطيط العناصر دون التفاصيل البصرية",
+            "كتابة كود البرمجة",
+            "شراء اسم نطاق للموقع"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Information Architecture and Wireframing",
+          "level": 4,
+          "stem": "أي من المعلومات التالية يجب توضيحها في Wireframe جيد؟",
+          "options": [
+            "الظلال والتدرجات اللونية الدقيقة",
+            "موضع العناصر والعلاقات بينها ونقاط التفاعل",
+            "حزم الخادم المستخدمة",
+            "تاريخ انطلاق التطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Information Architecture and Wireframing",
+          "level": 5,
+          "stem": "ما الفرق بين الـ Information Architecture والـ Navigation Structure؟",
+          "options": [
+            "لا يوجد فرق بينهما",
+            "IA تنظم محتوى كامل النظام بينما Navigation تركز على كيفية التنقل بين الأجزاء",
+            "Navigation أهم من Information Architecture",
+            "كلاهما يركز فقط على الجانب البصري"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Information Architecture and Wireframing",
+          "level": 7,
+          "stem": "عند تصميم Information Architecture لموقع معقد، ما المخاطر الناتجة عن عمق التسلسل الهرمي العميق جدا؟",
+          "options": [
+            "يحسن الأداء دائما",
+            "قد يضطر المستخدمون للنقر عدة مرات للوصول للمحتوى مما يزيد الإحباط",
+            "يقلل من احتياجات خادم الاستضافة",
+            "لا يؤثر على تجربة المستخدم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Information Architecture and Wireframing",
+          "level": 9,
+          "stem": "كيف يمكن أن تؤثر Information Architecture السيئة على تحسين محركات البحث SEO؟",
+          "options": [
+            "ليس لها تأثير إطلاقا",
+            "قد تجعل من الصعب على عناكب البحث فهرسة المحتوى بكفاءة",
+            "تحسن دائما من ترتيب محركات البحث",
+            "تقلل من سرعة التحميل فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Usability Testing and Validation",
+          "level": 2,
+          "stem": "ما المقصود باختبار قابلية الاستخدام Usability Testing؟",
+          "options": [
+            "قياس سرعة الإنترنت",
+            "مراقبة المستخدمين الحقيقيين وهم يستخدمون المنتج لتحديد المشاكل",
+            "عد عدد الأخطاء البرمجية",
+            "اختيار أفضل شركة استضافة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Usability Testing and Validation",
+          "level": 4,
+          "stem": "كم عدد المشاركين الموصى به لإجراء جلسة اختبار قابلية استخدام فعالة؟",
+          "options": [
+            "1 مشارك فقط",
+            "عادة 5 إلى 8 مشاركين",
+            "100 مشارك على الأقل",
+            "عدد المشاركين غير مهم"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Usability Testing and Validation",
+          "level": 5,
+          "stem": "ما الفرق بين Formative Testing و Summative Testing؟",
+          "options": [
+            "لا يوجد فرق بينهما",
+            "Formative يُجرى أثناء التطوير لتحسينه، Summative يقيس النتائج النهائية",
+            "Summative أرخص من Formative",
+            "كلاهما يُجرى في نهاية المشروع فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Usability Testing and Validation",
+          "level": 7,
+          "stem": "عند تحليل نتائج اختبار قابلية الاستخدام، لماذا من المهم التمييز بين مشاكل المستخدمين والمشاكل التقنية؟",
+          "options": [
+            "جميع المشاكل متماثلة",
+            "تحديد سبب المشكلة الحقيقي يحدد أولويات الحل وموقع الإصلاح",
+            "المشاكل التقنية أهم دائما",
+            "المشاكل يجب تجاهلها"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Usability Testing and Validation",
+          "level": 9,
+          "stem": "ما الانحياز الخطير الذي قد يحدث عند اختيار المشاركين في اختبارات القابلية؟",
+          "options": [
+            "المشاركون سيعطون دائما الإجابات الصحيحة",
+            "اختيار المشاركين الذين يشبهون الفريق قد يغفل مشاكل للمستخدمين الحقيقيين المختلفين",
+            "عدد المشاركين ليس مهما",
+            "يجب تقديم الحافز النقدي فقط"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Digital Prototyping and Design Tools",
+          "level": 2,
+          "stem": "ما الفائدة الأساسية من إنشاء Prototype في مراحل التصميم المبكرة؟",
+          "options": [
+            "توظيف المزيد من المطورين",
+            "اختبار الأفكار والحصول على تغذية راجعة قبل البرمجة الكاملة",
+            "تقليل تكاليف الاستضافة",
+            "اختيار اسم أفضل للتطبيق"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Digital Prototyping and Design Tools",
+          "level": 4,
+          "stem": "ما الفرق بين Low Fidelity Prototype و High Fidelity Prototype؟",
+          "options": [
+            "لا يوجد فرق بينهما",
+            "Low Fidelity بسيط وسريع، High Fidelity أقرب للمنتج النهائي مع تفاصيل كاملة",
+            "كلاهما يستخدم نفس الأدوات",
+            "High Fidelity أقل تكلفة دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Digital Prototyping and Design Tools",
+          "level": 5,
+          "stem": "متى يكون من الأفضل استخدام Low Fidelity Prototype بدلا من High Fidelity؟",
+          "options": [
+            "لا يجب استخدام Low Fidelity أبدا",
+            "في المراحل المبكرة لاختبار المفاهيم والتدفقات بسرعة وبتكلفة أقل",
+            "عندما يكون لدينا ميزانية كبيرة",
+            "فقط عند تصميم التطبيقات الكبيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Digital Prototyping and Design Tools",
+          "level": 7,
+          "stem": "ما المخاطر المحتملة للاعتماد كليا على High Fidelity Prototype في التحقق المبكر من الأفكار؟",
+          "options": [
+            "الأفكار ستكون أفضل دائما",
+            "قد ينشغل الفريق بالتفاصيل البصرية ويفقد التركيز على المشاكل الأساسية، وتكاليف التعديل تكون عالية",
+            "لا توجد مخاطر",
+            "الأداء يتحسن دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Digital Prototyping and Design Tools",
+          "level": 9,
+          "stem": "عند اختيار أدوات Prototyping متعددة في مشروع واحد، ما التحدي الرئيسي الذي قد ينشأ؟",
+          "options": [
+            "لا توجد تحديات",
+            "فجوات في التوافقية، مشاكل في نقل الملفات والمعرفة، واختلافات في الاستخدام بين الفريق",
+            "تكاليف البرمجة تقل",
+            "سهولة الوصول تزيد دائما"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Accessibility and Inclusive Design",
+          "level": 2,
+          "stem": "ما المقصود بـ Accessibility في تصميم الواجهات؟",
+          "options": [
+            "جعل الموقع متاحا للجميع بما فيهم الأشخاص ذوو الإعاقات",
+            "اختيار الخطوط الجميلة",
+            "زيادة سرعة التحميل",
+            "إضافة الصور في كل صفحة"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "topicName": "Accessibility and Inclusive Design",
+          "level": 4,
+          "stem": "أي من الممارسات التالية تحسن قابلية الوصول للمستخدمين ضعاف البصر؟",
+          "options": [
+            "استخدام نصوص صغيرة جدا",
+            "توفير تباين عالي بين النص والخلفية",
+            "عدم السماح بتكبير الصفحة",
+            "استخدام صور فقط بدون نص"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Accessibility and Inclusive Design",
+          "level": 5,
+          "stem": "ما أهمية استخدام Alt Text للصور في موقع ويب؟",
+          "options": [
+            "لا فائدة منها",
+            "تساعد قارئات الشاشة وتحسن SEO، وتوفر وصفا إذا فشلت الصورة",
+            "تزيد من حجم الملف",
+            "تبطئ الموقع"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Accessibility and Inclusive Design",
+          "level": 7,
+          "stem": "عند تصميم نموذج Keyboard Navigation، ما المشكلة إذا كان ترتيب التنقل Tab Order عشوائيا؟",
+          "options": [
+            "المستخدمون يفضلون الحركة العشوائية",
+            "المستخدمون الذين لا يستخدمون الماوس سيواجهون صعوبة في التنقل المنطقي",
+            "لا توجد مشكلة",
+            "تحسين الأداء يقل"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Accessibility and Inclusive Design",
+          "level": 9,
+          "stem": "في سياق Inclusive Design، ما الخطأ الشائع في اعتبار الإعاقة معطى واحد بدلا من طيف متغير؟",
+          "options": [
+            "لا يوجد خطأ في ذلك",
+            "قد يؤدي إلى حلول تفتقر المرونة، وتتجاهل الاحتياجات المتنوعة والمشتركة بين الأشخاص",
+            "الإعاقات دائما متطابقة",
+            "التصميم الشامل غير ضروري"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Communication and Design Strategy",
+          "level": 2,
+          "stem": "لماذا يعتبر التواصل الفعال بين فريق التصميم والفريق التقني مهما؟",
+          "options": [
+            "لا يحتاج إلى تواصل",
+            "لضمان ترجمة التصميمات بشكل صحيح إلى منتج نهائي",
+            "لتقليل عدد الفريق",
+            "لا تأثير على جودة المشروع"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Communication and Design Strategy",
+          "level": 4,
+          "stem": "ما أهمية توثيق Design System والـ Design Guidelines؟",
+          "options": [
+            "لا فائدة منها",
+            "توفير إرشادات واضحة للثبات والكفاءة عند تطبيق التصاميم",
+            "تبطئ العمل فقط",
+            "غير ضرورية للمشاريع الصغيرة"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Communication and Design Strategy",
+          "level": 5,
+          "stem": "كيف يجب على مصمم UX أن يبرر قرارات التصميم أمام أصحاب المصلحة؟",
+          "options": [
+            "بدون أي تبرير",
+            "بناء على بيانات البحث والاختبارات والأهداف الواضحة للمستخدم",
+            "بناء على الآراء الشخصية فقط",
+            "اتباع آخر الاتجاهات التصميمية"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Communication and Design Strategy",
+          "level": 7,
+          "stem": "ما التحدي الرئيسي عند التواصل مع أصحاب المصلحة الذين يريدون ميزات لا تحقق أهداف المستخدم الفعلية؟",
+          "options": [
+            "الموافقة على كل طلب",
+            "الموازنة بين احتياجات العمل والمستخدم من خلال البيانات والحوار المفتوح",
+            "رفض الطلبات مباشرة",
+            "تجاهل احتياجات العمل"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "topicName": "Communication and Design Strategy",
+          "level": 9,
+          "stem": "عند تطوير Design Strategy طويلة المدى، ما الخطأ في التركيز حصرا على احتياجات الأعمال الحالية دون التطلع للمستقبل؟",
+          "options": [
+            "تحقيق أهداف فورية صحيح",
+            "قد يؤدي إلى تصاميم تصبح عفا عليها الزمن سريعا، ولا تتكيف مع نمو المنتج والمستخدمين",
+            "المستقبل غير مهم",
+            "استراتيجية التصميم ليست ضرورية"
+          ],
+          "correctIndex": 1
         }
       ]
     }
