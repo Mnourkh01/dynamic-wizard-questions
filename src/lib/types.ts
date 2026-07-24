@@ -45,3 +45,20 @@ export type StartResult =
 export type AnswerResult =
   | { done: false; grade: PublicGrade; question: QuestionPayload }
   | { done: true; grade: PublicGrade; report: SessionReport };
+
+// The resume snapshot for a session: everything the UI (or the CLI --resume flag)
+// needs to pick up exactly where the candidate left off after a refresh or crash.
+// Served by GET /api/sessions/[id]; built by getSessionState (a pure read, it
+// never generates questions or reports).
+export interface SessionStateResult {
+  ok: true;
+  done: boolean;
+  candidateName?: string;
+  role: string;
+  specialization?: string;
+  language: "en" | "ar";
+  totalQuestions: number; // GLOBAL_MAX_QUESTIONS
+  answeredCount: number; // questions answered so far in the whole session
+  question: QuestionPayload | null; // open question when not done
+  report: SessionReport | null; // stored report when done, else null
+}

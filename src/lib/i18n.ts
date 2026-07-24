@@ -29,11 +29,12 @@ export interface UIStrings {
   formingQuestion: string;
   grading: string;
   composing: string;
+  writingReport: string;
   answerPlaceholder: string;
   submit: string;
   submitHint: string;
   chooseHint: string;
-  questionCounter: (n: number) => string;
+  questionCounter: (n: number, total: number) => string;
   topicPrefix: string;
   levelWord: string;
   ceilingProbe: string;
@@ -48,6 +49,7 @@ export interface UIStrings {
   gaps: string;
   learningPath: string;
   restart: string;
+  viewLastReport: string;
   copyLink: string;
   copied: string;
   errorGeneric: string;
@@ -81,11 +83,12 @@ export const UI: Record<UILang, UIStrings> = {
     formingQuestion: "Forming your question...",
     grading: "Reading your answer...",
     composing: "Composing your report...",
+    writingReport: "Writing your report... this takes about a minute",
     answerPlaceholder: "Type your answer. Take your time.",
     submit: "Submit",
     submitHint: "Ctrl + Enter",
     chooseHint: "Pick the best answer",
-    questionCounter: (n) => `Question ${n}`,
+    questionCounter: (n, total) => `Question ${n} of ${total}`,
     topicPrefix: "Probing",
     levelWord: "Level",
     ceilingProbe: "Testing your ceiling",
@@ -100,6 +103,7 @@ export const UI: Record<UILang, UIStrings> = {
     gaps: "Gaps",
     learningPath: "Where to go next",
     restart: "Assess again",
+    viewLastReport: "View your last report",
     copyLink: "Copy report link",
     copied: "Link copied",
     errorGeneric: "Something went wrong. Please try again.",
@@ -131,11 +135,12 @@ export const UI: Record<UILang, UIStrings> = {
     formingQuestion: "بيجهّز سؤالك...",
     grading: "بيقرأ إجابتك...",
     composing: "بيكتب تقريرك...",
+    writingReport: "بيكتب تقريرك... بياخد حوالي دقيقة",
     answerPlaceholder: "اكتب إجابتك. خد وقتك.",
     submit: "إرسال",
     submitHint: "Ctrl + Enter",
     chooseHint: "اختر الإجابة الأنسب",
-    questionCounter: (n) => `سؤال ${n}`,
+    questionCounter: (n, total) => `سؤال ${n} من ${total}`,
     topicPrefix: "بيقيس",
     levelWord: "مستوى",
     ceilingProbe: "بنختبر أقصى مستوى عندك",
@@ -150,6 +155,7 @@ export const UI: Record<UILang, UIStrings> = {
     gaps: "الفجوات",
     learningPath: "الخطوة الجاية",
     restart: "قيّم تاني",
+    viewLastReport: "شوف تقريرك الأخير",
     copyLink: "انسخ رابط التقرير",
     copied: "الرابط اتنسخ",
     errorGeneric: "حصل خطأ. جرّب تاني.",

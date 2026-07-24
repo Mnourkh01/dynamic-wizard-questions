@@ -9,6 +9,7 @@ import { shuffleMcqOptions } from "@/core/shuffle";
 import { roleWarmupOpener, templatedOpener } from "@/core/opener";
 import { difficultyBrief } from "@/core/ladder";
 import { getRoleBank } from "@/data/role-banks";
+import { GLOBAL_MAX_QUESTIONS } from "@/core/constants";
 import { applyGrade, decide, deterministicConfidence, initTopicState } from "@/core/policy";
 import { computeFinalScore } from "@/core/scoring";
 import type {
@@ -26,6 +27,7 @@ import type {
   PublicGrade,
   QuestionPayload,
   SessionReport,
+  SessionStateResult,
   StartResult,
 } from "@/lib/types";
 
@@ -39,6 +41,7 @@ export type {
   PublicGrade,
   QuestionPayload,
   SessionReport,
+  SessionStateResult,
   StartResult,
 } from "@/lib/types";
 
@@ -156,6 +159,7 @@ async function pickBankMcq(
       level: difficulty,
       language,
       alreadyAsked: asked.map((a) => a.text),
+      sessionId,
     });
     if (isValidMcq(gen.data.options, gen.data.correctIndex)) {
       return {
@@ -267,6 +271,7 @@ async function askText(
       persona,
       alreadyAsked: asked.map((a) => a.text),
       language,
+      sessionId,
     });
     text = q.data.text;
     rubricPoints = q.data.rubricPoints;
@@ -329,6 +334,7 @@ async function buildLiveBank(
       specialization,
       topics: topics.map((t) => t.name),
       language,
+      sessionId,
     });
     const rows = bank.data.topics.flatMap((bt) => {
       const topicRow = topics.find((t) => norm(t.name) === norm(bt.name));
@@ -617,6 +623,7 @@ async function ensureBlueprintOnce(sessionId: string): Promise<void> {
       specialization: session.specialization ?? undefined,
       persona,
       language,
+      sessionId: session.id,
     });
     const usable =
       blueprint.data.assessable && blueprint.data.topics.length > 0
@@ -856,6 +863,7 @@ async function submitAnswerOnce(input: {
         gold: rubric.gold,
         answer: answerRow.text,
         language,
+        sessionId: input.sessionId,
       });
       llmConfidence = graded.data.confidence;
       grade = {
@@ -1159,8 +1167,12 @@ async function finishSession(
         theta: t.theta,
         points: t.points,
         label: t.label,
+        // The topic's own share of the 1000 total, so the reporter can phrase
+        // "31 of its 146 points" instead of the misleading "31 of 1000".
+        maxPoints: t.importance,
       })),
     highlights,
+    sessionId,
   });
 
   const sessionReport: SessionReport = {
@@ -1199,6 +1211,75 @@ export async function peekMcqAnswer(
   if (!q || q.format !== "mcq" || q.correctIndex == null) return null;
   const options = safeParseArray(q.optionsJson ?? "[]");
   return { correctIndex: q.correctIndex, optionCount: options.length };
+}
+
+// Rebuild the resume snapshot for a session from persisted state, so a browser
+// refresh mid-run (or a CLI --resume) picks up exactly where the candidate left
+// off. PURE READ: never generates a question, never grades, never runs the
+// reporter (finishSession owns report generation and already dedupes retries, so
+// this path must not race it).
+export async function getSessionState(sessionId: string): Promise<SessionStateResult> {
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { topics: { orderBy: { order: "asc" } } },
+  });
+  if (!session) {
+    throw new DomainError("session_not_found", "No such assessment session.");
+  }
+
+  const states = session.topics.map(toTopicState);
+  const answeredCount = states.reduce((sum, t) => sum + t.answeredCount, 0);
+  const base = {
+    ok: true as const,
+    candidateName: session.candidateName ?? undefined,
+    role: session.role,
+    specialization: session.specialization ?? undefined,
+    language: session.language as Language,
+    totalQuestions: GLOBAL_MAX_QUESTIONS,
+    answeredCount,
+  };
+
+  // Finished: the stored report IS the result (same retrieval as the permalink).
+  if (session.status === "done") {
+    return { ...base, done: true, question: null, report: await getSessionReport(session.id) };
+  }
+
+  // The open question is the row at the next order with no Answer relation, the
+  // exact shape the replay guard in continueSession relies on: answering creates
+  // the Answer row, so "answer: null" means genuinely unanswered.
+  const open = await prisma.question.findFirst({
+    where: { sessionId: session.id, order: answeredCount + 1, answer: null },
+  });
+  if (!open) {
+    // No open question on an active session: the last submit is mid-flight
+    // (answer stored, grade pending) or crashed before serving the next question.
+    // A pure read cannot advance it; re-submitting the answer replays safely.
+    return { ...base, done: false, question: null, report: null };
+  }
+
+  // decide() is pure and the topic rows already reflect every stored grade, so
+  // re-running it reproduces the ceilingProbe/discovery flags the original ask
+  // used (the same trick the replay path uses).
+  const decision = decide(states, answeredCount);
+  const openTopic = session.topics.find((t) => t.id === open.topicId);
+  return {
+    ...base,
+    done: false,
+    report: null,
+    question: {
+      questionId: open.id,
+      order: open.order,
+      topicName: openTopic?.name ?? "",
+      difficulty: open.difficulty,
+      ceilingProbe: decision.kind === "ask" ? decision.ceilingProbe : false,
+      discovery: decision.kind === "ask" ? decision.discovery : false,
+      format: open.format === "mcq" ? "mcq" : "text",
+      text: open.text,
+      ...(open.format === "mcq"
+        ? { options: safeParseArray(open.optionsJson ?? "[]") }
+        : {}),
+    },
+  };
 }
 
 // Load a finished session's report from the DB (for the report permalink).

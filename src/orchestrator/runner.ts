@@ -6,17 +6,22 @@ import { prisma } from "@/db/client";
 import type { Language, Persona } from "@/core/types";
 import { shutdownObservability } from "@/observability/langfuse";
 import {
+  DomainError,
+  getSessionState,
   materializeSession,
   peekMcqAnswer,
   startSession,
   submitAnswer,
   type AnswerResult,
   type QuestionPayload,
+  type SessionReport,
+  type SessionStateResult,
 } from "./session";
 
 // Phase 1 CLI harness. Drives a full assessment headless, before any UI exists.
 //   npm run assess -- --role "Senior Android Engineer"
 //   npm run assess -- --role "Backend Engineer" --auto 7      (auto-candidate)
+//   npm run assess -- --resume <sessionId>                    (continue a saved run)
 //   MAX_QUESTIONS=6 npm run assess -- --role "..." --auto 5   (short test run)
 
 interface Args {
@@ -26,6 +31,7 @@ interface Args {
   persona?: Persona;
   language: Language;
   auto?: number; // simulate a candidate at this level (1-10)
+  resume?: string; // continue an existing session from its persisted state
 }
 
 function parseArgs(argv: string[]): Args {
@@ -34,8 +40,13 @@ function parseArgs(argv: string[]): Args {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const role = get("--role");
-  if (!role) {
-    console.error('Missing --role. Example: --role "Senior Android Engineer"');
+  const resume = get("--resume");
+  // A resumed session already knows its role, so --role is only required for a
+  // fresh start.
+  if (!role && !resume) {
+    console.error(
+      'Missing --role. Example: --role "Senior Android Engineer" (or --resume <sessionId>)',
+    );
     process.exit(1);
   }
   const years = get("--years");
@@ -47,12 +58,13 @@ function parseArgs(argv: string[]): Args {
   const auto = get("--auto");
   const language = (get("--language") as Language) ?? "en";
   return {
-    role,
+    role: role ?? "",
     specialization: get("--specialization"),
     candidateName: get("--name"),
     persona,
     language,
     auto: auto ? Number(auto) : undefined,
+    resume,
   };
 }
 
@@ -98,6 +110,25 @@ function printQuestion(q: QuestionPayload): void {
   if (q.format === "mcq" && q.options) {
     q.options.forEach((o, i) => console.log(`   ${i}) ${o}`));
   }
+}
+
+// Print the final report. Used by the normal finish path and by --resume when
+// the session already ended (the stored report is served, nothing re-runs).
+function printReport(r: SessionReport): void {
+  console.log("\n══════════ RESULT ══════════");
+  console.log(`Overall: ${r.total} / 1000  (± ${r.confidenceInterval})  ·  ${r.overallLabel}`);
+  for (const t of r.topics) {
+    console.log(`  ${t.points.toString().padStart(4)} / 1000  ${t.name}  (level ${t.theta.toFixed(1)}, ${t.label})`);
+  }
+  if (r.candidateName) console.log(`For: ${r.candidateName}`);
+  console.log(`\nVerdict: ${r.verdict}`);
+  console.log(`Summary: ${r.summary}`);
+  if (r.weakPoints.length > 0) {
+    console.log("Weak points:");
+    r.weakPoints.forEach((w) => console.log(`  - ${w.area}: ${w.issue}`));
+  }
+  console.log("Learning path:");
+  r.learningPath.forEach((s, i) => console.log(`  ${i + 1}. ${s}`));
 }
 
 // Produce the answer for the current question. MCQ answers are a 0-based option
@@ -160,36 +191,92 @@ function printSpend(): void {
   );
 }
 
+// Load the resume snapshot for --resume and report anything that ends the run
+// here (finished session, missing session, mid-flight grade). Returns the open
+// question to continue from, or null when there is nothing left to drive.
+async function loadResume(sessionId: string, args: Args): Promise<QuestionPayload | null> {
+  let state: SessionStateResult;
+  try {
+    state = await getSessionState(sessionId);
+  } catch (err) {
+    if (err instanceof DomainError && err.code === "session_not_found") {
+      console.error(`No session found with id ${sessionId}.`);
+      process.exitCode = 1;
+      return null;
+    }
+    throw err;
+  }
+
+  // The auto-candidate and the log line need the role; the stored session knows it.
+  if (!args.role) args.role = state.role;
+
+  console.log(`\nResuming assessment ${sessionId}`);
+  const spec = state.specialization ? ` (${state.specialization})` : "";
+  console.log(`Role: ${state.role}${spec}`);
+  if (state.candidateName) console.log(`Candidate: ${state.candidateName}`);
+  console.log(`Progress: ${state.answeredCount} of ${state.totalQuestions} questions answered`);
+
+  if (state.done) {
+    if (state.report) printReport(state.report);
+    else console.log("\nThis session is finished, but no report was stored.");
+    return null;
+  }
+  if (!state.question) {
+    console.log(
+      "\nNo open question to resume: the last answer was saved but not fully graded. Try again in a moment.",
+    );
+    process.exitCode = 1;
+    return null;
+  }
+  return state.question;
+}
+
 async function main(): Promise<void> {
   resetCostUsd();
   const args = parseArgs(process.argv.slice(2));
   const startedAt = Date.now();
 
-  console.log(`\nStarting assessment for: ${args.role}`);
-  const start = await startSession({
-    role: args.role,
-    specialization: args.specialization,
-    candidateName: args.candidateName,
-    persona: args.persona,
-    language: args.language,
-  });
-  if (!start.ok) {
-    console.error(`Could not start: ${start.reason}`);
-    process.exit(1);
+  let sessionId: string;
+  let current: QuestionPayload;
+
+  if (args.resume) {
+    const resumed = await loadResume(args.resume, args);
+    if (!resumed) {
+      await shutdown();
+      return;
+    }
+    sessionId = args.resume;
+    current = resumed;
+  } else {
+    console.log(`\nStarting assessment for: ${args.role}`);
+    const start = await startSession({
+      role: args.role,
+      specialization: args.specialization,
+      candidateName: args.candidateName,
+      persona: args.persona,
+      language: args.language,
+    });
+    if (!start.ok) {
+      console.error(`Could not start: ${start.reason}`);
+      process.exit(1);
+    }
+    sessionId = start.sessionId;
+    current = start.question;
   }
 
   // Build the real topics + MCQ bank in the background (a no-op for pre-seeded
   // roles). The CLI process stays alive through the answer loop, so it finishes
   // without blocking the first question, mirroring the web app's after() scheduling.
   // submitAnswer also awaits ensureBlueprint as a safety net on the first submit.
-  void materializeSession(start.sessionId);
+  // Idempotent, so a resumed session only pays this if its blueprint or bank was
+  // still pending when the previous run stopped.
+  void materializeSession(sessionId);
 
   const rl =
     args.auto === undefined
       ? createInterface({ input: process.stdin, output: process.stdout })
       : null;
 
-  let current: QuestionPayload = start.question;
   printQuestion(current);
 
   // Drive the loop until the engine reports done. One failed grade or agent call
@@ -207,7 +294,7 @@ async function main(): Promise<void> {
         // the submit failed.
         answer = answer ?? (await getAnswer(args, current, rl));
         result = await submitAnswer({
-          sessionId: start.sessionId,
+          sessionId,
           questionId: current.questionId,
           answer,
         });
@@ -223,7 +310,7 @@ async function main(): Promise<void> {
       // ending the loop keeps the shutdown path (spend, traces, DB) intact and
       // the session can be continued later from its persisted state.
       console.error(
-        `\nCould not get past Q${current.order} after a retry. Progress is saved under session ${start.sessionId}; try again later.`,
+        `\nCould not get past Q${current.order} after a retry. Progress is saved under session ${sessionId}; resume with --resume ${sessionId}.`,
       );
       bailed = true;
       break;
@@ -234,21 +321,7 @@ async function main(): Promise<void> {
     );
 
     if (result.done) {
-      const r = result.report;
-      console.log("\n══════════ RESULT ══════════");
-      console.log(`Overall: ${r.total} / 1000  (± ${r.confidenceInterval})  ·  ${r.overallLabel}`);
-      for (const t of r.topics) {
-        console.log(`  ${t.points.toString().padStart(4)} / 1000  ${t.name}  (level ${t.theta.toFixed(1)}, ${t.label})`);
-      }
-      if (r.candidateName) console.log(`For: ${r.candidateName}`);
-      console.log(`\nVerdict: ${r.verdict}`);
-      console.log(`Summary: ${r.summary}`);
-      if (r.weakPoints.length > 0) {
-        console.log("Weak points:");
-        r.weakPoints.forEach((w) => console.log(`  - ${w.area}: ${w.issue}`));
-      }
-      console.log("Learning path:");
-      r.learningPath.forEach((s, i) => console.log(`  ${i + 1}. ${s}`));
+      printReport(result.report);
       break;
     }
 
@@ -259,7 +332,7 @@ async function main(): Promise<void> {
   rl?.close();
   const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
   printSpend();
-  console.log(`\nSession id: ${start.sessionId}`);
+  console.log(`\nSession id: ${sessionId}`);
   console.log(`Cost: $${costSoFarUsd().toFixed(4)} · Time: ${secs}s`);
   // Signal an incomplete run without process.exit(): setting exitCode lets the
   // process drain naturally after shutdown (see the note below on libuv).
