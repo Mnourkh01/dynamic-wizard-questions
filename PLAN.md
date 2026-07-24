@@ -1,5 +1,21 @@
 # Dynamic Wizard Questions - Adaptive AI Skill Assessment
 
+## Status (2026-07-24): what actually shipped
+
+v1 is built and working end to end (CLI + web wizard). The plan below is kept for the record; sections that drifted are marked [Changed] or [Superseded] in place. The load-bearing deltas from the original plan:
+
+- **Data store is SQLite** via the Prisma `better-sqlite3` driver adapter (single-user local). The two Postgres paragraphs below are superseded.
+- **Hybrid exam replaced the all-free-text loop.** ONE templated written warm-up (question 1) is AI-graded for depth and jumps the starting ability; questions 2 to 25 are MCQs served from a pre-generated bank and scored in pure code (zero AI on submit). The session always runs exactly 25 questions (`MAX_QUESTIONS` env overrides for test runs) and ability carries across topics instead of resetting per topic.
+- **A fifth agent exists**: the MCQ writer (batch bank builder + single-question fallback + bank key verifier). Models moved for speed: topic planner haiku, question writer haiku, answer grader sonnet (down from Opus, kept honest by the validity gate), report writer sonnet, MCQ writer haiku.
+- **Preset roles start instantly** from `src/data/role-banks.json` (`npm run seed:roles`; incremental, per language, `--language ar` seeds Arabic). Custom or specialized roles, or a role/language pair without a seeded bank, get a deferred live blueprint: an instant templated role warm-up, real topics + bank built in the background (Next `after()` / CLI) with a safety-net await on the first submit.
+- **Serve-time deterministic MCQ option shuffle** (gaming fix: always-picking-A scored 916/1000 before, 351/1000 after) with a permanent regression net: a unit test inside `npm test` plus `npm run regression:always-a` against a live server.
+- **Idempotent answer submission** (a replay returns the stored result), typed `DomainError` mapped to HTTP 404/409, and session resume (web localStorage + `GET /api/sessions/[id]`, CLI `--resume`).
+- **Agent call hardening**: per-agent hard timeouts, classified retries capped at 2 attempts (rate limits never retried, schema failures get one repair pass with the invalid output shown back), subscription rate-limit envelope detection that surfaces the reset time.
+- **Langfuse is cloud-hosted keys-in-env** (optional, non-blocking), and every call of one assessment is grouped under one Langfuse session; the CLI prints a per-agent token/cost breakdown too.
+- **The validity gate grew a 24-item golden set** (`npm run validity -- --golden`: band ordering + prompt-injection ceiling) and the bank answer keys get audited by `npm run verify:banks` (blind re-answer, 85% agreement floor).
+- **The WebGL/GLSL shader was cut** (as the council required); the depth field ships as CSS/SVG. Setup is a two-step wizard (role chips, then focus/stack + name), bilingual EN/AR with RTL, report permalink at `/report/[id]`.
+- **Reporter phrasing rule**: a topic's points are phrased against the topic's own share ("31 of its 146 points"), never "X of 1000"; only the overall total is out of 1000.
+
 ## Context
 
 Goal in one sentence: build an app that measures a person's real skill in a role by asking free-text questions, grading each answer with AI, and adapting the next question to their demonstrated level, ending with a score out of 1000 split across topics.
@@ -14,7 +30,7 @@ Core design principle (the thing that keeps it clean):
 Decisions locked with the user:
 - Runtime: **TypeScript / Node**.
 - Interface: **Next.js web wizard**, part of v1.
-- Observability: **self-hosted Langfuse (Docker)** for full LLM tracing, plus SQLite domain data for the in-app view.
+- Observability: **Langfuse** for full LLM tracing, plus SQLite domain data for the in-app view. [Changed: shipped as Langfuse Cloud via env keys, optional and non-blocking; no Docker self-host needed.]
 - Topics: **dynamic** - a blueprint agent proposes topics + weights (summing to 1000) from a target role + persona.
 
 Not using Google ADK: it targets Gemini/Vertex and needs a paid API key to drive Claude. The Claude Agent SDK is the agent kit here.
@@ -42,6 +58,8 @@ Clean separation, dependencies point inward (core has zero framework/SDK/DB impo
 - `observability/` Langfuse wrapper that traces every agent call.
 - `app/` Next.js wizard UI + API route handlers (Node runtime) that expose the orchestrator to the browser.
 
+[Changed: this sketch predates the hybrid MCQ exam; the current shipped graph (five agents, instant/deferred start, MCQ bank, resume path) lives in `docs/system.md`.]
+
 ```mermaid
 flowchart TD
   U[User in browser] --> W[Next.js Wizard UI]
@@ -59,23 +77,29 @@ flowchart TD
   API --> W
 ```
 
-### The four agents (each its own job, its own system prompt, its own output schema)
+### The agents (each its own job, its own system prompt, its own output schema)
 
-1. **Blueprint agent** - input: target role + optional persona (background, years). Output: topics with integer weights summing to 1000, a difficulty ladder definition, and a starting prior per topic (persona with more experience starts higher to save questions).
-2. **Question agent** - input: one topic, a target difficulty band, the persona, and the list of already-asked questions (to avoid repeats). Output: question text, a grading rubric (key points expected), max score, and the level the question probes.
-3. **Grader agent** - input: the question, its rubric, and the user's free-text answer. Output: score 0-100, `demonstratedLevel` 1-10, matched points, missing points, misconceptions, a confidence 0-1, and short feedback. This is the heart of the system and should be strict and evidence-based.
-4. **Reporter agent** - input: the full transcript plus final ability estimates and points. Output: overall level label, per-topic strengths and gaps, and a recommended learning path (structured JSON plus prose).
+[Changed: shipped with FIVE agents under plain names (see `src/agents/config.ts`); the MCQ writer was added for the hybrid exam, and the blueprint's startLevel no longer steers the opener (everyone starts at the 101 floor).]
+
+1. **Topic planner** (was "Blueprint agent") - input: target role + optional specialization + optional persona. Output: 3 to 8 topics with raw importance values (normalized to 1000 in code) and a startLevel guess. Shipped note: startLevel is stored but the engine opens every session at the 101 warm-up floor regardless, so the persona can never inflate the score.
+2. **Question writer** - input: one topic, a target difficulty band, the persona, and the list of already-asked questions. Output: question text, rubric points, a gold reference answer, and the probed level. Shipped note: the warm-up is TEMPLATED in code (`core/opener.ts`), so this agent is off the product hot path (kept for the non-warm-up free-text branch and diagnostics).
+3. **MCQ writer** (new) - batch-builds the whole MCQ bank for a session or preset role in one call (levels 2/4/5/7/9 per topic), plus a single-MCQ live fallback and a blind bank-key verifier used by `npm run verify:banks`.
+4. **Answer grader** - input: the question, its rubric + gold, and the user's free-text answer. Output: score 0-100, `demonstratedLevel` 1-10, matched points (with quotes), missing points, misconceptions, a log-only confidence, and short feedback. Strict and evidence-based; only runs on the written warm-up (MCQs are graded in pure code).
+5. **Report writer** - input: final estimates, per-topic points and shares, and answer highlights. Output: verdict, plain summary, weak points (most important first), per-topic strengths/gaps, and a learning path. Topic points are phrased as "X of its Y points", never "X of 1000".
 
 Invocation is **code-orchestrated**, not model-orchestrated: the orchestrator calls agent functions in the fixed order below. Each `query()` gets a fresh isolated context, so agents do not leak state into each other.
 
 **Per-agent model + token budget** (all values live in one `agents/config.ts`, tuned without touching agent code):
 
-| Agent | Model | Why this model | Output token budget |
+[Changed: the shipped models are faster than planned; the grader dropped from Opus to Sonnet and is kept honest by the validity gate. Current values live in `src/agents/config.ts`.]
+
+| Agent | Model (shipped) | Why this model | Output token budget |
 | --- | --- | --- | --- |
-| Blueprint | Sonnet | structuring a role into weighted topics; Sonnet is enough, save the Opus budget for grading | medium |
-| Question | Sonnet | fast single-question generation, cheap, saves usage | low |
-| Grader | Opus | strict judgment of a free-text answer, the critical path, the only one that needs Opus | high (room to reason) |
-| Reporter | Sonnet | synthesize the transcript into a report; Sonnet is enough | medium |
+| Topic planner | Haiku | well-scoped schema-constrained task; this is the step a live Begin waits on, so speed wins | 4000 |
+| Question writer | Haiku | fast single-question generation (off the hot path now that the warm-up is templated) | 2000 |
+| MCQ writer | Haiku | batch-generates the whole bank in one background call; generous cap for many questions | 8000 |
+| Answer grader | Sonnet | strict judgment of the warm-up answer; Sonnet halves submit latency vs Opus, validity gate guards quality | 6000 |
+| Report writer | Sonnet | one end-of-session synthesis, prose quality matters, nobody is blocked mid-question | 6000 |
 
 Token cap mechanism (corrected by review): the TypeScript `query()` options do NOT expose a per-call `maxOutputTokens`. Instead each agent sets `CLAUDE_CODE_MAX_OUTPUT_TOKENS` (default 32k) through the per-call `env` option, so we still get a per-agent cap: generous for Grader, tight for Question. There is also no `temperature` option, so grader determinism does not come from temperature; it comes from rubric anchoring plus an optional self-consistency pass (grade twice and average) on high-stakes answers. Per-agent `model` and `maxBudgetUsd` (a runaway-cost guard) ARE first-class options and are set per agent in `agents/config.ts`.
 
@@ -100,16 +124,25 @@ Per topic we hold an ability estimate `theta` (scale 1-10) and an uncertainty `s
 
 This is IRT-lite: honest, debuggable, explainable, no model training. It is the right amount of engineering, not more.
 
+[Changed in the shipped engine (`src/core/policy.ts`, `src/core/constants.ts`, `src/core/mcq.ts`):]
+
+- **theta starts LOW at the 101 warm-up floor** (`START_THETA = DISCOVERY_LEVEL = 2`), not at a neutral midpoint or persona prior, and climbs only on evidence. The wide initial sigma lets the graded warm-up depth jump it several levels at once. The persona/startLevel prior no longer aims anything.
+- **MCQ grading is a staircase, not a depth read**: a correct pick demonstrates a level a step ABOVE the item, a wrong pick a step below (see `core/mcq.ts`), so consecutive rounds climb to the true level and bracket it. Convergence is deliberately blocked while a winning streak is running below the top band, so early easy items cannot pin the estimate.
+- **One-sided evidence gate (2026-07-24 calibration, may still be tuned)**: a passing answer can only RAISE the estimate (it proves ability at least at the item level, so an easy leftover item cannot drag a high estimate down) and a failing answer can only LOWER it (a wrong pick on a hard item cannot pull a weak candidate up). Mid scores from the graded written warm-up keep the symmetric move, since a depth grade is a real point estimate. A pure simulator (`core/simulate.ts`) mirrors the live loop with zero I/O so the level-to-score curve can be pinned by tests.
+- **Topic selection spreads a fixed budget**, it does not chase the highest sigma: continue an in-progress topic under its fair share, then open the most important unstarted topic (seeded at the running ability via `seedTheta`, no warm-up reset), then spend leftovers on the least-covered topic.
+- **The session never stops early.** It always asks exactly `GLOBAL_MAX_QUESTIONS` (25) questions, then reports. Per-topic convergence is a data-sufficiency guard inside selection, not a session stop. Scoring renormalizes importance over ASSESSED topics only, so an unreached topic reads "not assessed" instead of dragging the score.
+
 ### Data model (Prisma + SQLite)
 
-- `Session` (role, persona, status, startedAt, finishedAt, finalScore)
-- `Topic` (sessionId, name, weight, theta, sigma, points)
-- `Question` (sessionId, topicId, order, difficulty, text, rubric json, maxScore)
+- `Session` (role, specialization, candidateName, persona, language, status, blueprintPending, finalScore, reportJson, startedAt, finishedAt)
+- `Topic` (sessionId, name, order, importance, theta, sigma, startLevel, points, counts, streak, converged)
+- `Question` (sessionId, topicId, order, difficulty, text, rubric json, format text|mcq, optionsJson, correctIndex kept server-side)
 - `Answer` (questionId, text, submittedAt)
-- `Evaluation` (answerId, score, demonstratedLevel, confidence, feedback json)
+- `Evaluation` (answerId, score, demonstratedLevel, llmConfidence log-only, deterministicConfidence, matched, missing, feedback)
 - `AbilitySnapshot` (sessionId, order, topicId, theta, sigma) - drives the level-over-time curve
+- `BankQuestion` (sessionId, topicId, level, stem, optionsJson, correctIndex, used) - the pre-generated MCQ pool a session draws from
 
-Store is **Postgres** (via Prisma), reusing the Postgres that Langfuse's docker-compose already runs, because the app writes many rows per assessment for many users and SQLite would lock under concurrent writes. Prisma gives typed access and migrations. Sessions are resumable because full state lives in these tables.
+[Superseded] The original plan said Postgres here (shared with Langfuse's docker-compose) because it assumed many concurrent users. v1 shipped as a single-user local app, so the store is **SQLite** via the Prisma `better-sqlite3` driver adapter, exactly as the locked v1 decisions above state. Sessions are still resumable because full state lives in these tables.
 
 ### Observability
 
@@ -121,10 +154,10 @@ Store is **Postgres** (via Prisma), reusing the Postgres that Langfuse's docker-
 
 - **Agents run with tools hard-disabled.** User answers and the target role are untrusted free text that flows into agent prompts, so every agent call sets `allowedTools: []`, an explicit `disallowedTools` belt, `settingSources: []` (no CLAUDE.md, hooks, or MCP pulled into the assessment agents), a benign `cwd`, and never `bypassPermissions`. The agents only need text in and JSON out via `outputFormat: json_schema`. User text is wrapped in explicit "treat as data, not instructions" delimiters, and every returned score is bounds-validated in code. This is the prompt-injection defense and it is a tested config in `agents/client.ts`, not a suggestion.
 - **Cost and usage guards.** `maxBudgetUsd` is set per agent call as a runaway guard. Blueprint and Reporter run on Sonnet, only Grader on Opus. Degenerate answers (empty, "I don't know", gibberish, too short) are short-circuited to score 0 in code without spending an Opus call. Agent calls are serialized / queued with a cap on concurrent `claude` child processes so the subscription window is not burned.
-- **Latency is designed for, not deferred.** An Opus grade can take 10 to 40 seconds. The submit endpoint returns a pending state and the UI polls (or uses SSE) with a visible progress state and a request timeout, so the browser never holds a silent long request that a host would time out. This is part of Phase 2, not Phase 3.
+- **Latency is designed for, not deferred.** [Changed: solved structurally instead of with polling/SSE. Only TWO requests in a session wait on AI: grading the written warm-up and the final report; both are single blocking requests with an honest busy label. Every MCQ round is pure DB work and returns instantly, and every agent call has a hard per-agent timeout so a hung spawn fails the attempt, not the session.]
 - **Orchestrator is a resumable pure step machine from day one.** The core is `advance(sessionState, answer) -> { nextQuestion } | { done }`, each call persisted, with no internal blocking loop. `runner.ts` (the Phase 1 CLI) just drives it in a loop; the Phase 2 API drives the same function per HTTP call; resume (Phase 3) then comes for free. This avoids a Phase 2 rewrite.
-- **Grader reliability additions.** The Question agent also emits a concise gold/reference answer next to the rubric. The Grader must cite which rubric points are met with a short quote from the answer, is told explicitly not to reward length or fluency (verbosity bias), and high-stakes answers can be graded twice and averaged (self-consistency). A small calibration set (5 to 10 known question/answer pairs with expected scores) sanity-checks the grader in Phase 1.
-- **Data store is Postgres, not SQLite.** The app stores many rows per assessment and is meant for many users, where SQLite hits "database is locked" under concurrent writes. The Langfuse self-host docker-compose already runs Postgres, so a Postgres service is essentially free to add. Prisma points at Postgres from Phase 0.
+- **Grader reliability additions.** The Question agent also emits a concise gold/reference answer next to the rubric. The Grader must cite which rubric points are met with a short quote from the answer and is told explicitly not to reward length or fluency (verbosity bias). [Changed: the twice-and-average self-consistency pass was not needed and did not ship; the calibration set shipped bigger than planned as the 6-answer quick gate plus a 24-item golden set with band ordering and prompt-injection ceiling assertions (`npm run validity`, `npm run validity -- --golden`).]
+- [Superseded] **Data store.** This bullet originally argued for Postgres on multi-user grounds; the locked v1 scope (single-user local) made that moot and the app shipped on **SQLite** via the Prisma `better-sqlite3` driver adapter. Postgres returns with multi-user v2.
 
 ## UI direction and interaction design
 
@@ -140,10 +173,10 @@ Why this is not a repeat: glassmorphism appears twice in the recent ledger (Opal
 
 Interaction choreography (the signature the user asked for):
 
-1. First sight - Setup: the lens sits foggy and unfocused, center screen. The user enters the target role and optional persona (experience). On submit, the blueprint agent really runs; while it works, the field stirs and the gauge calibrates (a genuine loading state tied to real work, never fake), then the lens sharpens and the first question forms.
+1. First sight - Setup: the lens sits foggy and unfocused, center screen. The user picks a role and a focus/stack in a two-step wizard. [Changed: Begin is now INSTANT. A preset role clones its pre-seeded topics + MCQ bank with zero AI; a custom or specialized role shows a templated role warm-up immediately while the blueprint + bank build in the background. Nothing waits on the topic planner at Begin anymore.]
 2. Question state: the lens holds the question revealed line by line (GSAP SplitText masked reveal), a topic chip naming what this probes, the answer field (multiline, monospace when the user is writing code), and a depth gauge showing the current estimated level. The field drifts slowly.
 3. On submit: a refraction ripple passes through the glass (the lens is reading you) and the answer lifts and blurs out, tied to the grader agent actually running. When the grade returns, the depth gauge animates to the new level (rises or dips), the field shifts to match, and a short amber beacon pulse marks the update. An optional one-line feedback can flash (off by default, to avoid coaching the next answer). The next question then forms via the same lens re-focus (blur-out, liquid morph, blur-in), not a plain slide or fade. This re-focus is the signature transition.
-4. Result: when the engine stops (converged, or senior+, or cap), the lens unfolds into the report on the same page: an overall level, and the 1000-point split shown as vertical depth gauges (one column per topic, filled to how deep you went) instead of a generic radar, plus strengths, gaps, and a recommended path. The report also gets a permalink (`/report/[id]`, SSR from SQLite) so a result can be revisited or shared, while the live experience stays one page.
+4. Result: when the engine stops [changed: always after exactly 25 questions, never early], the lens unfolds into the report on the same page: an overall level, and the 1000-point split shown as vertical depth gauges (one column per topic, filled to how deep you went) instead of a generic radar, plus strengths, gaps, and a recommended path. The report also gets a permalink (`/report/[id]`, SSR from SQLite) so a result can be revisited or shared, while the live experience stays one page.
 
 Motion and performance:
 
@@ -156,18 +189,18 @@ Build process: Phase 2 runs through the `frontend-workflow` skill, not freehand.
 
 ## Delivery phases (v1 = working wizard end to end; build order de-risks the engine first)
 
-**Phase 0 - Foundation spike (the real de-risk).** Scaffold Next.js + TS + Prisma/**Postgres** + docker-compose (Langfuse + Postgres). Wire the Claude Agent SDK with tools hard-disabled and prove the integration end to end. Auth is already known-good (the CLI is signed in and the SDK inherits it). The real unknowns this phase kills: (1) the SDK spawning the `claude` CLI from a **real Next.js Node-runtime route** on Windows, which is a known failure (`spawn claude ENOENT`, bundler mis-tracing) fixed with `serverExternalPackages: ['@anthropic-ai/claude-agent-sdk']` in `next.config.js` and an explicit `pathToClaudeCodeExecutable`; (2) per-agent `model` and the `CLAUDE_CODE_MAX_OUTPUT_TOKENS` cap via the `env` option; (3) tools-off actually holds. Exit: hitting a real Next.js API route (`/api/smoke`, not just a standalone script) returns a schema-validated JSON object from `query()` with a chosen model and token budget, tools disabled, and writes a row to Postgres.
+**Phase 0 - Foundation spike (the real de-risk). [Done]** (Shipped on SQLite, no docker-compose; the smoke route writes to SQLite.) Scaffold Next.js + TS + Prisma (planned as Postgres + docker-compose, shipped as SQLite). Wire the Claude Agent SDK with tools hard-disabled and prove the integration end to end. Auth is already known-good (the CLI is signed in and the SDK inherits it). The real unknowns this phase kills: (1) the SDK spawning the `claude` CLI from a **real Next.js Node-runtime route** on Windows, which is a known failure (`spawn claude ENOENT`, bundler mis-tracing) fixed with `serverExternalPackages: ['@anthropic-ai/claude-agent-sdk']` in `next.config.js` and an explicit `pathToClaudeCodeExecutable`; (2) per-agent `model` and the `CLAUDE_CODE_MAX_OUTPUT_TOKENS` cap via the `env` option; (3) tools-off actually holds. Exit: hitting a real Next.js API route (`/api/smoke`, not just a standalone script) returns a schema-validated JSON object from `query()` with a chosen model and token budget, tools disabled, and writes a row to the DB (shipped: SQLite).
 
-**Phase 1 - Core engine, code-orchestrated, CLI-testable.** Build the four agents (`agents/`), the deterministic policy + scoring (`core/`), the orchestrator loop, and Langfuse tracing. Runnable headless via a CLI harness before any UI exists. Exit: `npm run assess -- --role "Senior Android Engineer"` runs a full session (blueprint -> adaptive question/grade loop -> 1000-point report), the run appears as a nested trace in Langfuse, and `npm test` passes for policy + scoring (table-driven deterministic tests).
+**Phase 1 - Core engine, code-orchestrated, CLI-testable. [Done]** Build the agents (`agents/`; five as shipped, the MCQ writer joined with the hybrid exam), the deterministic policy + scoring (`core/`), the orchestrator loop, and Langfuse tracing. Runnable headless via a CLI harness before any UI exists. Exit: `npm run assess -- --role "Senior Android Engineer"` runs a full session (blueprint -> adaptive question/grade loop -> 1000-point report), the run appears as a nested trace in Langfuse, and `npm test` passes for policy + scoring (table-driven deterministic tests).
 
-**Phase 2 - The single-page wizard (Next.js), "Liquid depth gauge" direction.** Build the one-page experience described in the UI section: Setup state (role + persona), the adaptive Question loop (the glass lens, topic chip, answer field, live depth gauge, the refraction/re-focus transition on each submit), and the Result state (overall level + per-topic vertical depth gauges + strengths/gaps), all morphing in place with GSAP over the living WebGL field. API route handlers wire the orchestrator to the browser (Node runtime, request/response per step; SSE streaming is a later nicety). The report also gets an SSR permalink `/report/[id]`. Built through the `frontend-workflow` skill (fresh references pulled at build time, one committed direction, one pro icon family, reduced-motion honored, ledger row appended). Exit: click through a full assessment in a real browser (verified with chrome-devtools), the depth gauges and report render correctly, Lighthouse Performance >= 90, and the API is confirmed with a direct curl.
+**Phase 2 - The single-page wizard (Next.js), "Liquid depth gauge" direction. [Done]** (Shipped with a CSS/SVG depth field instead of the cut WebGL shader, and a two-step setup wizard.) Build the one-page experience described in the UI section: Setup state (role + persona), the adaptive Question loop (the glass lens, topic chip, answer field, live depth gauge, the refraction/re-focus transition on each submit), and the Result state (overall level + per-topic vertical depth gauges + strengths/gaps), all morphing in place with GSAP over the living WebGL field. API route handlers wire the orchestrator to the browser (Node runtime, request/response per step; SSE streaming is a later nicety). The report also gets an SSR permalink `/report/[id]`. Built through the `frontend-workflow` skill (fresh references pulled at build time, one committed direction, one pro icon family, reduced-motion honored, ledger row appended). Exit: click through a full assessment in a real browser (verified with chrome-devtools), the depth gauges and report render correctly, Lighthouse Performance >= 90, and the API is confirmed with a direct curl.
 
-**Phase 3 - Stable/Production polish.** Session resume, agent-failure retries and malformed-answer handling, usage/rate guardrails, the observability dashboard page, a11y and Lighthouse >= 90. Exit: failures degrade gracefully, resume works, review passes.
+**Phase 3 - Stable/Production polish. [Mostly done]** Session resume [done: web refresh + CLI --resume], agent-failure retries and malformed-answer handling [done: classified retries, idempotent submits, DomainError 404/409], usage/rate guardrails [done: rate-limit envelope detection + per-agent budgets/timeouts], the observability dashboard page [not built; Langfuse covers it], a11y and Lighthouse >= 90 [open follow-up alongside score calibration].
 
 ## Files to create (representative, greenfield)
 
 - Docs: `PLAN.md`, `CLAUDE.md`, `docs/system.md` (the mermaid graph), `README.md`, `.env.example`
-- Config: `package.json`, `tsconfig.json`, `next.config.js` (with `serverExternalPackages` for the SDK), `docker-compose.yml` (Langfuse + Postgres), `prisma/schema.prisma` (Postgres provider), `.env.example`
+- Config: `package.json`, `tsconfig.json`, `next.config.ts` (with `serverExternalPackages` for the SDK), `prisma/schema.prisma` (SQLite provider; the planned docker-compose + Postgres were dropped with the v1 scope)
 - Core (pure, tested): `src/core/types.ts`, `src/core/ladder.ts`, `src/core/policy.ts`, `src/core/scoring.ts`, `src/core/policy.test.ts`, `src/core/scoring.test.ts`
 - Agents: `src/agents/schemas.ts` (Zod contracts), `src/agents/client.ts` (SDK + Langfuse wrapper), `src/agents/blueprint.ts`, `src/agents/question.ts`, `src/agents/grader.ts`, `src/agents/reporter.ts`
 - Orchestration: `src/orchestrator/session.ts`, `src/orchestrator/runner.ts` (Phase 1 CLI harness)
@@ -175,10 +208,12 @@ Build process: Phase 2 runs through the `frontend-workflow` skill, not freehand.
 - App (single page + report permalink): `src/app/page.tsx` (the one-page assessment: Setup / Question loop / Result states), `src/app/report/[id]/page.tsx` (SSR permalink), `src/app/api/sessions/route.ts`, `src/app/api/sessions/[id]/answer/route.ts`, `src/app/api/sessions/[id]/report/route.ts`
 - UI components: `src/components/GlassLens.tsx` (the reading surface + refraction/re-focus transition), `src/components/DepthField.tsx` (the WebGL/GLSL living field), `src/components/DepthGauge.tsx` (level gauge + per-topic result gauges), `src/components/AnswerField.tsx` (multiline + code-aware input)
 
+[Changed: the shipped file map differs a little. No `GlassLens.tsx` (the lens is styling on the page shell) and `DepthField.tsx` is CSS/SVG, not WebGL. Added since the plan: `src/agents/mcq.ts` + `prompt.ts` + `config.ts`, `src/core/mcq.ts` + `shuffle.ts` + `opener.ts` + `answers.ts` + `constants.ts`, `src/data/role-banks.(ts|json)`, `src/lib/types.ts` + `i18n.ts`, `src/components/ResultPanel.tsx`, `src/app/api/sessions/[id]/route.ts` (resume), `src/validity/` (check, golden-set, sample), and `scripts/` (gen-role-banks, verify-role-banks, always-a-regression).]
+
 ## Verification (end to end, not "it compiles")
 
 - Phase 0: run `npm run smoke` with `ANTHROPIC_API_KEY` unset, confirm a validated JSON object and a SQLite row. This proves the subscription-auth + SDK-in-Node integration before we build on it.
-- Phase 1: run the CLI harness for a full session, open Langfuse at `localhost:3000` and confirm the trace tree with token/cost/latency and attached grade scores. Run `npm test` for the deterministic engine.
+- Phase 1: run the CLI harness for a full session, open Langfuse (cloud; watch Tracing/Sessions, one Langfuse session per assessment) and confirm the traces with token/cost/latency. Run `npm test` for the deterministic engine.
 - Phase 2: `npm run dev`, drive the wizard in a browser via chrome-devtools through a complete assessment, inspect console + network for errors, verify the report and charts render, run Lighthouse. Also `curl` the three API routes directly for backend proof.
 - Phase 3: kill a session mid-way and resume it; force an agent error and confirm graceful handling.
 
