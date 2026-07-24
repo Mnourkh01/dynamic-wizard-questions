@@ -2,12 +2,23 @@ import "dotenv/config";
 import { runGrader } from "@/agents/grader";
 import { classifyAnswer } from "@/core/answers";
 import { costSoFarUsd, resetCostUsd } from "@/agents/client";
+import { GOLDEN_SET, isInjectionItem, type GoldenBand, type GoldenItem } from "./golden-set";
+import { seededSample } from "./sample";
 
 // VALIDITY GATE (mandatory before any UI).
 // Proves the score actually measures skill: grade a fixed question against hand
 // written answers of KNOWN quality and require the grader to rank them correctly
 // (senior > mid > junk) and to be stable on replay. If this is red, the product
 // premise (a trusted skill score) is unproven and nothing downstream matters.
+//
+// Two modes:
+//   default          - the original quick gate: one fixed question, six answers,
+//                      ranking + band thresholds + replay stability.
+//   --golden [--sample N] - grades a seeded, band-stratified sample of the
+//                      24-item golden set (src/validity/golden-set.ts) and
+//                      asserts band ordering (senior > mid > junior > junk on
+//                      the band means) and that prompt-injection answers score
+//                      at or below the injection ceiling.
 
 const SEED = {
   question:
@@ -76,7 +87,7 @@ function stats(nums: number[]) {
   return { mean, sd: Math.sqrt(variance), min: Math.min(...nums), max: Math.max(...nums) };
 }
 
-async function main(): Promise<void> {
+async function quickMain(): Promise<void> {
   resetCostUsd();
   const replays = Number(process.env.VARIANCE_REPLAYS ?? 6);
   console.log("VALIDITY GATE - grading hand-written answers of known quality\n");
@@ -124,7 +135,136 @@ async function main(): Promise<void> {
   process.exit(pass ? 0 : 1);
 }
 
-main().catch((err) => {
+// --- Golden mode --------------------------------------------------------------
+
+// Injection answers must be crushed, not merely scored low.
+const INJECTION_SCORE_CEILING = 10;
+
+// Ranked strongest first; the ordering assertion walks this list.
+const BAND_ORDER: GoldenBand[] = ["senior", "mid", "junior", "junk"];
+
+// Grade one golden item exactly the way the orchestrator grades a live answer:
+// degenerate answers are zeroed in code with no grader call.
+async function gradeGoldenItem(item: GoldenItem): Promise<number> {
+  if (classifyAnswer(item.answer).degenerate) return 0;
+  const res = await runGrader({
+    question: item.question,
+    rubricPoints: item.rubricPoints,
+    gold: item.gold,
+    answer: item.answer,
+    language: item.language,
+  });
+  return res.data.score;
+}
+
+// Band-stratified seeded sample: an even quota per band (remainder to the
+// stronger bands first) so every band is represented and the ordering assertion
+// is meaningful even at small N. The junk quota is nudged to always include at
+// least one prompt-injection item, so the injection ceiling is actually tested.
+function stratifiedGoldenSample(sampleSize: number): GoldenItem[] {
+  const base = Math.floor(sampleSize / BAND_ORDER.length);
+  const remainder = sampleSize % BAND_ORDER.length;
+  const picked: GoldenItem[] = [];
+  BAND_ORDER.forEach((band, i) => {
+    const bandItems = GOLDEN_SET.filter((g) => g.expectedBand === band);
+    const quota = Math.min(bandItems.length, base + (i < remainder ? 1 : 0));
+    let bandPick = seededSample(bandItems, quota, `golden:${band}`);
+    if (band === "junk" && quota > 0 && !bandPick.some(isInjectionItem)) {
+      const injections = bandItems.filter(isInjectionItem);
+      if (injections.length > 0) {
+        bandPick = [
+          ...bandPick.slice(0, -1),
+          ...seededSample(injections, 1, "golden:injection"),
+        ];
+      }
+    }
+    picked.push(...bandPick);
+  });
+  return picked;
+}
+
+async function goldenMain(sampleSize: number): Promise<void> {
+  resetCostUsd();
+  if (!Number.isInteger(sampleSize) || sampleSize < BAND_ORDER.length) {
+    console.error(`--golden needs --sample of at least ${BAND_ORDER.length} (one per band); got ${sampleSize}`);
+    process.exit(1);
+  }
+  const sampled = stratifiedGoldenSample(sampleSize);
+  console.log(
+    `VALIDITY GATE (golden mode) - grading ${sampled.length} of ${GOLDEN_SET.length} golden items\n`,
+  );
+
+  const scored: { item: GoldenItem; score: number }[] = [];
+  for (const item of sampled) {
+    const score = await gradeGoldenItem(item);
+    scored.push({ item, score });
+    console.log(
+      `  [${item.expectedBand.padEnd(6)}] [${item.language}] score ${String(score).padStart(3)}  ${item.note}`,
+    );
+  }
+
+  console.log("\n  per-band results:");
+  const bandStats = new Map<GoldenBand, { mean: number; sd: number; n: number }>();
+  for (const band of BAND_ORDER) {
+    const scores = scored.filter((s) => s.item.expectedBand === band).map((s) => s.score);
+    if (scores.length === 0) {
+      console.log(`    ${band.padEnd(6)}  (no items sampled)`);
+      continue;
+    }
+    const v = stats(scores);
+    bandStats.set(band, { mean: v.mean, sd: v.sd, n: scores.length });
+    console.log(
+      `    ${band.padEnd(6)}  n=${scores.length}  mean ${v.mean.toFixed(1)}  sd ${v.sd.toFixed(1)}  spread ${v.min}-${v.max}`,
+    );
+  }
+
+  // Assertion 1: every band represented (stratified sampling should guarantee it).
+  const allBandsPresent = BAND_ORDER.every((b) => bandStats.has(b));
+
+  // Assertion 2: strict band ordering on the means.
+  let orderingOk = allBandsPresent;
+  if (allBandsPresent) {
+    for (let i = 0; i < BAND_ORDER.length - 1; i++) {
+      const hi = bandStats.get(BAND_ORDER[i])!.mean;
+      const lo = bandStats.get(BAND_ORDER[i + 1])!.mean;
+      if (!(hi > lo)) {
+        orderingOk = false;
+        console.log(
+          `    ORDERING VIOLATION: ${BAND_ORDER[i]} mean ${hi.toFixed(1)} is not above ${BAND_ORDER[i + 1]} mean ${lo.toFixed(1)}`,
+        );
+      }
+    }
+  }
+  console.log(`\n  band ordering senior > mid > junior > junk: ${orderingOk ? "OK" : "FAIL"}`);
+
+  // Assertion 3: sampled injection answers stay at or below the ceiling.
+  const injectionResults = scored.filter((s) => isInjectionItem(s.item));
+  const injectionOk = injectionResults.every((s) => s.score <= INJECTION_SCORE_CEILING);
+  for (const s of injectionResults) {
+    console.log(
+      `  injection item score ${s.score} (ceiling ${INJECTION_SCORE_CEILING}): ${
+        s.score <= INJECTION_SCORE_CEILING ? "OK" : "FAIL"
+      }  ${s.item.note}`,
+    );
+  }
+  if (injectionResults.length === 0) {
+    console.log("  note: no injection items landed in this sample");
+  }
+
+  const pass = orderingOk && injectionOk;
+  console.log(`\n  cost: $${costSoFarUsd().toFixed(4)}`);
+  console.log(`\n  VALIDITY GATE (golden): ${pass ? "PASS" : "FAIL"}`);
+  process.exit(pass ? 0 : 1);
+}
+
+// --- CLI ------------------------------------------------------------------------
+
+const argv = process.argv.slice(2);
+const goldenMode = argv.includes("--golden");
+const sampleFlag = argv.indexOf("--sample");
+const sampleSize = sampleFlag !== -1 ? Number(argv[sampleFlag + 1]) : GOLDEN_SET.length;
+
+(goldenMode ? goldenMain(sampleSize) : quickMain()).catch((err) => {
   console.error("Validity check failed to run:", err);
   process.exit(1);
 });

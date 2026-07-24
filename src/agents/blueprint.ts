@@ -22,6 +22,8 @@ export async function runBlueprint(input: {
   specialization?: string;
   persona?: Persona;
   language: Language;
+  // DB session id for Langfuse grouping (one assessment = one trace session).
+  sessionId?: string;
 }): Promise<{ data: BlueprintOutput; costUsd: number }> {
   const cfg = AGENTS.topicPlanner;
   const personaText = input.persona ? JSON.stringify(input.persona) : "none provided";
@@ -42,6 +44,7 @@ export async function runBlueprint(input: {
     schema: BlueprintOutputSchema,
     maxOutputTokens: cfg.maxOutputTokens,
     maxBudgetUsd: cfg.maxBudgetUsd,
+    groupId: input.sessionId,
   });
   return { data: res.data, costUsd: res.costUsd };
 }

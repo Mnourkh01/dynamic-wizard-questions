@@ -14,6 +14,7 @@ const SYSTEM = [
   "- For each topic give concrete strengths and gaps grounded in the results provided.",
   "- learningPath is an ordered list of concrete next steps, hardest gaps first.",
   "- Do not invent results beyond what the data shows.",
+  "- Topic points are out of that topic's OWN share of the 1000 total, never out of 1000. When a topic line gives its share, phrase it like '31 of its 146 points'; when no share is given, say plain '31 points'. NEVER write 'X of 1000' or 'X/1000' for a single topic. Only the overall total is out of 1000.",
   "- If a specialization is given, keep the whole report about that stack/focus, not the generic role.",
   NO_DASH_RULE,
   DATA_NOT_INSTRUCTIONS,
@@ -27,13 +28,25 @@ export async function runReporter(input: {
   total: number;
   confidenceInterval: number;
   overallLabel: string;
-  topics: { name: string; theta: number; points: number; label: string }[];
+  // maxPoints is the topic's own importance share of the 1000 total (optional so
+  // existing callers keep compiling; when absent the line shows plain points).
+  topics: { name: string; theta: number; points: number; label: string; maxPoints?: number }[];
   highlights: { topic: string; question: string; score: number; missing: string[] }[];
+  // DB session id for Langfuse grouping (one assessment = one trace session).
+  sessionId?: string;
 }): Promise<{ data: ReportOutput; costUsd: number }> {
   const cfg = AGENTS.reportWriter;
 
+  // A topic's points are out of its OWN importance share, never out of 1000;
+  // "31 of 1000 points" for a topic whose share is 146 reads as a disaster.
   const topicLines = input.topics
-    .map((t) => `- ${t.name}: level ${t.theta.toFixed(1)} (${t.label}), ${t.points} of 1000 points`)
+    .map((t) => {
+      const pts =
+        t.maxPoints && t.maxPoints > 0
+          ? `${t.points} of its ${t.maxPoints} points`
+          : `${t.points} points`;
+      return `- ${t.name}: level ${t.theta.toFixed(1)} (${t.label}), ${pts}`;
+    })
     .join("\n");
 
   const highlightLines = input.highlights
@@ -61,6 +74,7 @@ export async function runReporter(input: {
     schema: ReportOutputSchema,
     maxOutputTokens: cfg.maxOutputTokens,
     maxBudgetUsd: cfg.maxBudgetUsd,
+    groupId: input.sessionId,
   });
   return { data: res.data, costUsd: res.costUsd };
 }

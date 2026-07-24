@@ -131,6 +131,10 @@ export interface AgentRunInput<S extends z.ZodType> {
   // (timeoutMsForAgentLabel) applies.
   timeoutMs?: number;
   abort?: AbortController;
+  // The assessment's DB session id. Groups every call of one assessment into
+  // ONE Langfuse session; without it each call lands under its own throwaway
+  // CLI session id and a 25-step run scatters into 25 unrelated traces.
+  groupId?: string;
 }
 
 export interface AgentRunResult<T> {
@@ -415,7 +419,7 @@ async function runOnce<S extends z.ZodType>(
     costUsd,
     usage,
     durationMs,
-    sessionId,
+    sessionId: input.groupId ?? sessionId,
     input: input.user,
     output: data,
   });
@@ -518,7 +522,7 @@ export async function runAgent<S extends z.ZodType>(
           cacheCreationTokens: 0,
         },
         durationMs: 0,
-        sessionId: "",
+        sessionId: input.groupId ?? "",
         input: input.user,
         output: {
           error: err instanceof Error ? err.message : String(err),

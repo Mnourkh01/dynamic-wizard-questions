@@ -26,6 +26,8 @@ export async function runQuestion(input: {
   persona?: Persona;
   alreadyAsked: string[];
   language: Language;
+  // DB session id for Langfuse grouping (one assessment = one trace session).
+  sessionId?: string;
 }): Promise<{ data: QuestionOutput; costUsd: number }> {
   const cfg = AGENTS.questionWriter;
   const personaText = input.persona ? JSON.stringify(input.persona) : "none provided";
@@ -53,6 +55,7 @@ export async function runQuestion(input: {
     schema: QuestionOutputSchema,
     maxOutputTokens: cfg.maxOutputTokens,
     maxBudgetUsd: cfg.maxBudgetUsd,
+    groupId: input.sessionId,
   });
   return { data: res.data, costUsd: res.costUsd };
 }

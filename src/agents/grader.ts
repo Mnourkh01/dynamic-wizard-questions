@@ -23,6 +23,8 @@ export async function runGrader(input: {
   gold: string;
   answer: string;
   language: Language;
+  // DB session id for Langfuse grouping (one assessment = one trace session).
+  sessionId?: string;
 }): Promise<{ data: GradeOutput; costUsd: number }> {
   const cfg = AGENTS.answerGrader;
   const rubric = input.rubricPoints.map((p, i) => `${i + 1}. ${p}`).join("\n");
@@ -44,6 +46,7 @@ export async function runGrader(input: {
     schema: GradeOutputSchema,
     maxOutputTokens: cfg.maxOutputTokens,
     maxBudgetUsd: cfg.maxBudgetUsd,
+    groupId: input.sessionId,
   });
   return { data: res.data, costUsd: res.costUsd };
 }
