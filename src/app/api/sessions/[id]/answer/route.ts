@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { submitAnswer } from "@/orchestrator/session";
+import { DomainError, submitAnswer } from "@/orchestrator/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +34,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
     return NextResponse.json(result);
   } catch (err) {
+    // Expected domain failures map to proper statuses; only real faults stay 500.
+    if (err instanceof DomainError) {
+      const status =
+        err.code === "session_not_found" || err.code === "question_not_found" ? 404 : 409;
+      return NextResponse.json(
+        { ok: false, error: err.message, code: err.code },
+        { status },
+      );
+    }
     console.error(`[api/sessions/${id}/answer] submitAnswer failed:`, err);
     return NextResponse.json(
       { ok: false, error: "Could not grade this answer. Please try again." },

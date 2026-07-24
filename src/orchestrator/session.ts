@@ -5,6 +5,7 @@ import { runQuestion } from "@/agents/question";
 import { runReporter } from "@/agents/reporter";
 import { classifyAnswer } from "@/core/answers";
 import { gradeFromMcq, isValidMcq } from "@/core/mcq";
+import { shuffleMcqOptions } from "@/core/shuffle";
 import { roleWarmupOpener, templatedOpener } from "@/core/opener";
 import { difficultyBrief } from "@/core/ladder";
 import { getRoleBank } from "@/data/role-banks";
@@ -40,6 +41,31 @@ export type {
   SessionReport,
   StartResult,
 } from "@/lib/types";
+
+// Typed, expected failures. The API routes translate these into proper HTTP
+// statuses (404 / 409) instead of leaking Prisma errors as opaque 500s.
+export type DomainErrorCode =
+  | "session_not_found"
+  | "question_not_found"
+  | "already_answered"
+  | "session_done";
+
+export class DomainError extends Error {
+  readonly code: DomainErrorCode;
+  constructor(code: DomainErrorCode, message: string) {
+    super(message);
+    this.name = "DomainError";
+    this.code = code;
+  }
+}
+
+// Prisma unique-constraint violation (P2002), duck-typed so this file does not
+// depend on the generated client's error classes.
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002"
+  );
+}
 
 interface RubricJson {
   points: string[];
@@ -151,7 +177,18 @@ async function askMcq(
   language: Language,
   order: number,
 ): Promise<QuestionPayload> {
-  const mcq = await pickBankMcq(sessionId, topicId, topicState.name, decision.difficulty, language);
+  const picked = await pickBankMcq(sessionId, topicId, topicState.name, decision.difficulty, language);
+
+  // Shuffle BEFORE persisting: the generator LLM lists the correct option first
+  // most of the time, so serving verbatim makes always-picking-A a winning
+  // strategy. Persisting the shuffled order means the served payload and the
+  // grading comparison agree by construction.
+  const shuffled = shuffleMcqOptions(
+    `${sessionId}:${order}:${picked.stem}`,
+    picked.options,
+    picked.correctIndex,
+  );
+  const mcq = { ...picked, options: shuffled.options, correctIndex: shuffled.correctIndex };
 
   // The grader never runs on an MCQ, but Question.rubric is required; store a
   // minimal rubric (the correct option) so the row shape stays consistent.
@@ -684,7 +721,29 @@ export async function materializeSession(sessionId: string): Promise<void> {
   await buildSessionBank(sessionId);
 }
 
+// In-flight submits keyed by question, so a double-fired request (impatient
+// double click, or a client retry racing a slow grader) awaits the SAME work
+// instead of spawning a second grader call or tripping the Answer unique
+// constraint. Same pattern as _blueprintInFlight; single server process, so a
+// module-level map is enough. Cleared when the submit settles.
+const _submitInFlight = new Map<string, Promise<AnswerResult>>();
+
 export async function submitAnswer(input: {
+  sessionId: string;
+  questionId: string;
+  answer: string;
+}): Promise<AnswerResult> {
+  const key = `${input.sessionId}:${input.questionId}`;
+  const existing = _submitInFlight.get(key);
+  if (existing) return existing;
+  const p = submitAnswerOnce(input).finally(() => {
+    _submitInFlight.delete(key);
+  });
+  _submitInFlight.set(key, p);
+  return p;
+}
+
+async function submitAnswerOnce(input: {
   sessionId: string;
   questionId: string;
   answer: string;
@@ -698,34 +757,67 @@ export async function submitAnswer(input: {
   // instead of at Begin.
   await ensureBlueprint(input.sessionId);
 
-  const session = await prisma.session.findUniqueOrThrow({
+  const session = await prisma.session.findUnique({
     where: { id: input.sessionId },
     include: { topics: { orderBy: { order: "asc" } } },
   });
-  const question = await prisma.question.findUniqueOrThrow({
+  if (!session) {
+    throw new DomainError("session_not_found", "No such assessment session.");
+  }
+  const question = await prisma.question.findUnique({
     where: { id: input.questionId },
   });
+  // A question from another session is "not found" here: grading it against this
+  // session's topics would corrupt both sessions.
+  if (!question || question.sessionId !== session.id) {
+    throw new DomainError("question_not_found", "No such question in this session.");
+  }
   const rubric = JSON.parse(question.rubric) as RubricJson;
   const language = session.language as Language;
-  const persona: Persona | undefined = session.persona
-    ? (JSON.parse(session.persona) as Persona)
-    : undefined;
+
+  // Idempotent replay: if this question already has a graded answer (double-fired
+  // request, or a retry after a crash later in the pipeline), rebuild the result
+  // from the stored rows instead of grading again. This is what un-bricks a
+  // session after a failure between persisting and responding.
+  const existingAnswer = await prisma.answer.findUnique({
+    where: { questionId: question.id },
+    include: { evaluation: true },
+  });
+  if (existingAnswer?.evaluation) {
+    return replayAnswerResult(session.id, existingAnswer.evaluation);
+  }
+
+  // Only replays of already graded questions are allowed on a non-active session;
+  // new grading work on a finished (or abandoned) session is rejected.
+  if (session.status !== "active") {
+    throw new DomainError("session_done", "This assessment is already finished.");
+  }
 
   let grade: Grade;
   let publicGrade: PublicGrade;
   let llmConfidence = 0;
-  let answerText = input.answer;
+  let answerRow: { id: string; text: string };
 
   if (question.format === "mcq") {
     // Deterministic scoring, no AI: the answer is the 0-based selected option.
     const options = safeParseArray(question.optionsJson ?? "[]");
-    const selected = Number.parseInt(input.answer, 10);
+    // A retry after a mid-submit crash grades the STORED answer text, so the
+    // grade always matches what was persisted first. INVARIANT this relies on:
+    // Answer.text for an MCQ is either the exact option text (valid pick) or
+    // the raw submitted string (invalid pick, indexOf misses, falls through to
+    // re-parsing the same raw string). If answerText persistence ever changes
+    // shape, this replay lookup must change with it.
+    const storedIndex = existingAnswer ? options.indexOf(existingAnswer.text) : -1;
+    const selected = storedIndex >= 0 ? storedIndex : Number.parseInt(input.answer, 10);
     const valid = Number.isInteger(selected) && selected >= 0 && selected < options.length;
     const correct = valid && selected === question.correctIndex;
     const correctText =
       question.correctIndex != null ? (options[question.correctIndex] ?? "") : "";
-    answerText = valid ? options[selected] : input.answer;
-    grade = gradeFromMcq(correct, question.difficulty);
+    const answerText = valid ? options[selected] : input.answer;
+    // Grade at the level of the item actually served (rubric.level), not the
+    // level the engine asked for: the bank only holds levels 2/4/5/7/9, so the
+    // nearest pick can differ from the requested difficulty.
+    grade = gradeFromMcq(correct, rubric.level ?? question.difficulty);
     publicGrade = {
       score: grade.score,
       demonstratedLevel: grade.demonstratedLevel,
@@ -733,10 +825,15 @@ export async function submitAnswer(input: {
       missing: correct ? [] : [correctText],
       feedback: correct ? "Correct." : `Not quite. The correct answer was: ${correctText}`,
     };
+    answerRow = await ensureAnswerRow(question.id, answerText, existingAnswer);
   } else {
-    // Free-text depth probe. Degenerate answers are scored 0 in code, saving a
-    // grading call; otherwise the grader agent judges it.
-    const classification = classifyAnswer(input.answer);
+    // Answer-first persistence: store the user's text BEFORE the grader call, so
+    // a grader failure never loses what they typed, and a retry of the same
+    // submit grades the stored row instead of tripping the unique constraint.
+    answerRow = await ensureAnswerRow(question.id, input.answer, existingAnswer);
+    // Degenerate answers are scored 0 in code, saving a grading call; otherwise
+    // the grader agent judges the stored text.
+    const classification = classifyAnswer(answerRow.text);
     if (classification.degenerate) {
       grade = {
         score: 0,
@@ -757,7 +854,7 @@ export async function submitAnswer(input: {
         question: question.text,
         rubricPoints: rubric.points,
         gold: rubric.gold,
-        answer: input.answer,
+        answer: answerRow.text,
         language,
       });
       llmConfidence = graded.data.confidence;
@@ -778,40 +875,11 @@ export async function submitAnswer(input: {
     }
   }
 
-  // Persist the answer + its evaluation.
-  const answerRow = await prisma.answer.create({
-    data: { questionId: question.id, text: answerText },
-  });
-  await prisma.evaluation.create({
-    data: {
-      answerId: answerRow.id,
-      score: Math.round(grade.score),
-      demonstratedLevel: grade.demonstratedLevel,
-      llmConfidence,
-      deterministicConfidence: deterministicConfidence(grade),
-      matched: JSON.stringify(publicGrade.matched),
-      missing: JSON.stringify(publicGrade.missing),
-      misconceptions: JSON.stringify([]),
-      feedback: publicGrade.feedback,
-    },
-  });
-
-  // Update the graded topic through the pure engine and persist it.
+  // Update the graded topic through the pure engine.
   const topicRow = session.topics.find((t) => t.id === question.topicId);
   if (!topicRow) throw new Error("graded question has no matching topic");
   const before = toTopicState(topicRow);
   const after = applyGrade(before, grade);
-
-  await prisma.topic.update({
-    where: { id: topicRow.id },
-    data: {
-      theta: after.theta,
-      sigma: after.sigma,
-      answeredCount: after.answeredCount,
-      consecutiveStrong: after.consecutiveStrong,
-      converged: after.converged,
-    },
-  });
 
   // Rebuild the full state list with this topic updated.
   const states = session.topics.map((row) =>
@@ -819,20 +887,181 @@ export async function submitAnswer(input: {
   );
   const totalAnswered = states.reduce((sum, t) => sum + t.answeredCount, 0);
 
-  // Snapshot for the level-over-time curve.
-  await prisma.abilitySnapshot.create({
-    data: {
-      sessionId: session.id,
-      topicId: topicRow.id,
-      order: totalAnswered,
-      theta: after.theta,
-      sigma: after.sigma,
-    },
+  // Evaluation, topic update, and level-curve snapshot land atomically, so
+  // "evaluation exists" always implies "topic updated". That invariant is what
+  // makes the replay path above safe to trust.
+  try {
+    await prisma.$transaction([
+      prisma.evaluation.create({
+        data: {
+          answerId: answerRow.id,
+          score: Math.round(grade.score),
+          demonstratedLevel: grade.demonstratedLevel,
+          llmConfidence,
+          deterministicConfidence: deterministicConfidence(grade),
+          matched: JSON.stringify(publicGrade.matched),
+          missing: JSON.stringify(publicGrade.missing),
+          misconceptions: JSON.stringify([]),
+          feedback: publicGrade.feedback,
+        },
+      }),
+      prisma.topic.update({
+        where: { id: topicRow.id },
+        data: {
+          theta: after.theta,
+          sigma: after.sigma,
+          answeredCount: after.answeredCount,
+          consecutiveStrong: after.consecutiveStrong,
+          converged: after.converged,
+        },
+      }),
+      prisma.abilitySnapshot.create({
+        data: {
+          sessionId: session.id,
+          topicId: topicRow.id,
+          order: totalAnswered,
+          theta: after.theta,
+          sigma: after.sigma,
+        },
+      }),
+    ]);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      // A concurrent submit (another process on the same DB) evaluated this
+      // answer first; its stored result is authoritative, so replay it.
+      const winner = await prisma.answer.findUnique({
+        where: { questionId: question.id },
+        include: { evaluation: true },
+      });
+      if (winner?.evaluation) return replayAnswerResult(session.id, winner.evaluation);
+      throw new DomainError("already_answered", "This question was already answered.");
+    }
+    throw err;
+  }
+
+  return continueSession(session, states, totalAnswered, publicGrade);
+}
+
+// Find-or-create the Answer row for a question. Tolerates a concurrent create
+// from another process (Answer is unique on questionId) by re-reading the winner.
+async function ensureAnswerRow(
+  questionId: string,
+  text: string,
+  existing: { id: string; text: string } | null,
+): Promise<{ id: string; text: string }> {
+  if (existing) return existing;
+  try {
+    return await prisma.answer.create({ data: { questionId, text } });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      const winner = await prisma.answer.findUnique({ where: { questionId } });
+      if (winner) return winner;
+    }
+    throw err;
+  }
+}
+
+// Rebuild the AnswerResult for a question that already has a stored evaluation.
+// Reads fresh session state (the evaluation and its topic update land in one
+// transaction, so the topics already reflect this grade) and re-runs the
+// deterministic decide step, so a double-fired or retried submit gets the same
+// result the original call would have returned.
+async function replayAnswerResult(
+  sessionId: string,
+  evaluation: {
+    score: number;
+    demonstratedLevel: number;
+    matched: string;
+    missing: string;
+    feedback: string;
+  },
+): Promise<AnswerResult> {
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { topics: { orderBy: { order: "asc" } } },
   });
+  if (!session) {
+    throw new DomainError("session_not_found", "No such assessment session.");
+  }
+
+  const publicGrade: PublicGrade = {
+    score: evaluation.score,
+    demonstratedLevel: evaluation.demonstratedLevel,
+    matched: safeParseArray(evaluation.matched),
+    missing: safeParseArray(evaluation.missing),
+    feedback: evaluation.feedback,
+  };
+
+  // Finished session: the stored report IS the previously computed result.
+  if (session.status === "done" && session.reportJson) {
+    return {
+      done: true,
+      grade: publicGrade,
+      report: JSON.parse(session.reportJson) as SessionReport,
+    };
+  }
+
+  const states = session.topics.map(toTopicState);
+  const totalAnswered = states.reduce((sum, t) => sum + t.answeredCount, 0);
+  return continueSession(session, states, totalAnswered, publicGrade);
+}
+
+// The shared "what happens after a graded answer" step: ask the pure engine to
+// decide, then either serve the next question or finish. Used by the fresh
+// grading path and by idempotent replays, so both produce the same shape.
+async function continueSession(
+  session: {
+    id: string;
+    role: string;
+    specialization: string | null;
+    candidateName: string | null;
+    persona: string | null;
+    language: string;
+    topics: { id: string; name: string }[];
+  },
+  states: TopicState[],
+  totalAnswered: number,
+  publicGrade: PublicGrade,
+): Promise<AnswerResult> {
+  const language = session.language as Language;
+  const persona: Persona | undefined = session.persona
+    ? (JSON.parse(session.persona) as Persona)
+    : undefined;
 
   const decision = decide(states, totalAnswered);
 
   if (decision.kind === "ask") {
+    // Replay guard: an earlier attempt (or a raced duplicate) may already have
+    // created the next question. Serve the stored row instead of generating a
+    // second one, so bank items are not burned twice and orders stay unique.
+    // CONTRACT: "answer: null" means the Answer relation row does not exist yet;
+    // answering creates the Answer row (the relation), nothing ever writes a
+    // placeholder Answer for an unanswered question. If that ever changes, this
+    // guard would wrongly re-serve answered questions.
+    const open = await prisma.question.findFirst({
+      where: { sessionId: session.id, order: totalAnswered + 1, answer: null },
+    });
+    if (open) {
+      const openTopic = session.topics.find((t) => t.id === open.topicId);
+      return {
+        done: false,
+        grade: publicGrade,
+        question: {
+          questionId: open.id,
+          order: open.order,
+          topicName: openTopic?.name ?? "",
+          difficulty: open.difficulty,
+          ceilingProbe: decision.ceilingProbe,
+          discovery: decision.discovery,
+          format: open.format === "mcq" ? "mcq" : "text",
+          text: open.text,
+          ...(open.format === "mcq"
+            ? { options: safeParseArray(open.optionsJson ?? "[]") }
+            : {}),
+        },
+      };
+    }
+
     const nextTopicRow = session.topics[decision.topicIndex];
     const nextState = states[decision.topicIndex];
     // Carry the running ability into a FRESH topic so it continues at the
@@ -856,7 +1085,9 @@ export async function submitAnswer(input: {
     return { done: false, grade: publicGrade, question: question2 };
   }
 
-  // Done: score, report, persist.
+  // Done: score, report, persist. finishSession is retry-safe: if the reporter
+  // fails here, every evaluation is already stored, and a retry of the same
+  // submit replays into finishSession to regenerate the report.
   const report = await finishSession(
     session.id,
     states,
@@ -876,6 +1107,14 @@ async function finishSession(
   candidateName?: string,
   specialization?: string,
 ): Promise<SessionReport> {
+  // Retry-safe: a previous attempt may have stored the report but lost the
+  // response, or a replayed submit may land here after the fact. Serve the
+  // stored report instead of re-running the reporter agent.
+  const existing = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (existing?.reportJson) {
+    return JSON.parse(existing.reportJson) as SessionReport;
+  }
+
   const score = computeFinalScore(states);
 
   // Persist per-topic points + the headline.

@@ -10,6 +10,7 @@ import {
   peekMcqAnswer,
   startSession,
   submitAnswer,
+  type AnswerResult,
   type QuestionPayload,
 } from "./session";
 
@@ -191,15 +192,42 @@ async function main(): Promise<void> {
   let current: QuestionPayload = start.question;
   printQuestion(current);
 
-  // Drive the loop until the engine reports done.
+  // Drive the loop until the engine reports done. One failed grade or agent call
+  // must not kill a 25-question run: retry the question once, then stop
+  // gracefully. Every answer is persisted server-side before grading, so nothing
+  // typed is lost and the session state stays resumable.
+  let bailed = false;
   for (;;) {
-    const answer = await getAnswer(args, current, rl);
-
-    const result = await submitAnswer({
-      sessionId: start.sessionId,
-      questionId: current.questionId,
-      answer,
-    });
+    let answer: string | undefined;
+    let result: AnswerResult | undefined;
+    for (let attempt = 1; attempt <= 2 && result === undefined; attempt++) {
+      try {
+        // Keep the first collected answer across the retry so a human is not
+        // asked to retype (and the auto-candidate is not re-spawned) when only
+        // the submit failed.
+        answer = answer ?? (await getAnswer(args, current, rl));
+        result = await submitAnswer({
+          sessionId: start.sessionId,
+          questionId: current.questionId,
+          answer,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `\n[warn] Q${current.order} failed (${msg}).${attempt < 2 ? " Retrying once..." : ""}`,
+        );
+      }
+    }
+    if (result === undefined) {
+      // Skip forward gracefully: the answer (if collected) is already stored, so
+      // ending the loop keeps the shutdown path (spend, traces, DB) intact and
+      // the session can be continued later from its persisted state.
+      console.error(
+        `\nCould not get past Q${current.order} after a retry. Progress is saved under session ${start.sessionId}; try again later.`,
+      );
+      bailed = true;
+      break;
+    }
 
     console.log(
       `  grade: ${result.grade.score}/100 · demonstrated level ${result.grade.demonstratedLevel}`,
@@ -233,6 +261,9 @@ async function main(): Promise<void> {
   printSpend();
   console.log(`\nSession id: ${start.sessionId}`);
   console.log(`Cost: $${costSoFarUsd().toFixed(4)} · Time: ${secs}s`);
+  // Signal an incomplete run without process.exit(): setting exitCode lets the
+  // process drain naturally after shutdown (see the note below on libuv).
+  if (bailed) process.exitCode = 1;
   await shutdown();
   // Exit naturally now that the tracer + DB are closed. Calling process.exit()
   // here is what force-closed a native handle mid-flight and tripped the libuv
