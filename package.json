@@ -11,6 +11,7 @@
     "assess": "tsx src/orchestrator/runner.ts",
     "validity": "tsx src/validity/check.ts",
     "seed:roles": "tsx scripts/gen-role-banks.ts",
+    "regression:always-a": "node scripts/always-a-regression.cjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "prisma generate",
