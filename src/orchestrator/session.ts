@@ -1202,10 +1202,12 @@ async function gradeScannedSubmission(input: GradeInput): Promise<GradeOutcome> 
   // means a corrupted row rather than a coverage of zero. Reading it as "covered
   // nothing" would quietly bottom out the score, so fall back to the band, which
   // was measured from the answer itself and needs no rubric.
-  const score =
+  const score = Math.min(
+    100,
     total > 0
       ? Math.round((scan.matched.length / total) * 100)
-      : Math.round(((scan.read.band - 1) / (BAND_MAX - 1)) * 100);
+      : Math.round(((scan.read.band - 1) / (BAND_MAX - 1)) * 100),
+  );
 
   return {
     grade: {

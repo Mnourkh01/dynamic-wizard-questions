@@ -202,15 +202,16 @@ function printSpend(): void {
   }
   console.log("\n──────── SPEND (per agent) ────────");
   console.log(
-    `${"agent".padEnd(18)}${"calls".padStart(6)}${"in".padStart(9)}${"out".padStart(9)}${"cost".padStart(10)}`,
+    `${"agent".padEnd(24)}${"calls".padStart(6)}${"in".padStart(9)}${"out".padStart(9)}${"cost".padStart(10)}${"s/call".padStart(9)}`,
   );
   for (const r of rows) {
+    const perCall = r.calls > 0 ? (r.durationMs / r.calls / 1000).toFixed(1) : "0.0";
     console.log(
-      `${r.agent.padEnd(18)}${String(r.calls).padStart(6)}${String(seenIn(r)).padStart(9)}${String(r.outputTokens).padStart(9)}${("$" + r.costUsd.toFixed(4)).padStart(10)}`,
+      `${r.agent.padEnd(24)}${String(r.calls).padStart(6)}${String(seenIn(r)).padStart(9)}${String(r.outputTokens).padStart(9)}${("$" + r.costUsd.toFixed(4)).padStart(10)}${perCall.padStart(9)}`,
     );
   }
   console.log(
-    `${"TOTAL".padEnd(18)}${"".padStart(6)}${String(totalIn).padStart(9)}${String(totalOut).padStart(9)}${("$" + costSoFarUsd().toFixed(4)).padStart(10)}`,
+    `${"TOTAL".padEnd(24)}${"".padStart(6)}${String(totalIn).padStart(9)}${String(totalOut).padStart(9)}${("$" + costSoFarUsd().toFixed(4)).padStart(10)}`,
   );
 }
 

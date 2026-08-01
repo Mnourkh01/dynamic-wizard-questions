@@ -52,14 +52,32 @@ export interface AgentSpend extends AgentUsage {
   agent: string;
   calls: number;
   costUsd: number;
+  // Summed wall time across this agent's attempts, INCLUDING attempts that
+  // failed. A call that stalls for its full deadline and then succeeds on the
+  // retry is the exact case worth seeing, so counting only the successful
+  // attempt would hide the thing this field exists to surface. Concurrent calls
+  // overlap, so this is where the session spent time, not how long it took.
+  durationMs: number;
 }
+
+const EMPTY_USAGE: AgentUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheReadTokens: 0,
+  cacheCreationTokens: 0,
+};
 
 // Process-wide spend accumulators. Let a CLI run or an API request report how
 // much a session cost, and where, without threading cost through every return.
 let _totalCostUsd = 0;
 const _spendByAgent = new Map<string, AgentSpend>();
 
-function recordSpend(agent: string, costUsd: number, usage: AgentUsage): void {
+function recordSpend(
+  agent: string,
+  costUsd: number,
+  usage: AgentUsage,
+  durationMs: number,
+): void {
   _totalCostUsd += costUsd;
   const prev =
     _spendByAgent.get(agent) ??
@@ -67,6 +85,7 @@ function recordSpend(agent: string, costUsd: number, usage: AgentUsage): void {
       agent,
       calls: 0,
       costUsd: 0,
+      durationMs: 0,
       inputTokens: 0,
       outputTokens: 0,
       cacheReadTokens: 0,
@@ -76,6 +95,7 @@ function recordSpend(agent: string, costUsd: number, usage: AgentUsage): void {
     agent,
     calls: prev.calls + 1,
     costUsd: prev.costUsd + costUsd,
+    durationMs: prev.durationMs + durationMs,
     inputTokens: prev.inputTokens + usage.inputTokens,
     outputTokens: prev.outputTokens + usage.outputTokens,
     cacheReadTokens: prev.cacheReadTokens + usage.cacheReadTokens,
@@ -411,7 +431,7 @@ async function runOnce<S extends z.ZodType>(
     cacheReadTokens: u?.cache_read_input_tokens ?? 0,
     cacheCreationTokens: u?.cache_creation_input_tokens ?? 0,
   };
-  recordSpend(input.agent, costUsd, usage);
+  recordSpend(input.agent, costUsd, usage, durationMs);
 
   traceAgent({
     agent: input.agent,
@@ -500,12 +520,17 @@ export async function runAgent<S extends z.ZodType>(
   let lastErr: unknown;
   let attemptsMade = 0;
   for (let attempt = 1; attempt <= 2; attempt++) {
+    const attemptStarted = Date.now();
     try {
       const repair = attempt > 1 ? repairSuffixFor(lastErr) : undefined;
       return await runOnce(input, repair);
     } catch (err) {
       lastErr = err;
       attemptsMade = attempt;
+      // A failed attempt still consumed wall time, and a timeout consumed the
+      // most of anyone. Record it with zero cost and zero usage so the latency
+      // picture is complete even when the spend is not.
+      recordSpend(input.agent, 0, EMPTY_USAGE, Date.now() - attemptStarted);
       const plan = planRetry(err);
       // The langfuse wrapper has no dedicated error/event API (and its public
       // API is frozen), so a failed attempt is recorded through the same

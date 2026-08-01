@@ -221,7 +221,12 @@ async function main(): Promise<void> {
   const rows = costBreakdown();
   if (rows.length > 0) {
     console.log("\n──────── spend ────────");
-    for (const r of rows) console.log(`  ${r.agent.padEnd(26)} ${r.calls} calls  $${r.costUsd.toFixed(4)}`);
+    for (const r of rows) {
+      const perCall = r.calls > 0 ? (r.durationMs / r.calls / 1000).toFixed(1) : "0.0";
+      console.log(
+        `  ${r.agent.padEnd(26)} ${String(r.calls).padStart(3)} calls  $${r.costUsd.toFixed(4)}  ${String(r.outputTokens).padStart(7)} out  ${perCall.padStart(6)} s/call`,
+      );
+    }
   }
   console.log(
     `\nTotal $${costSoFarUsd().toFixed(4)} · ${((Date.now() - started) / 1000).toFixed(1)}s`,

@@ -111,6 +111,12 @@ const COMMON_RULES = [
   "Quote the SHORTEST span that shows the signal, usually a handful of words and never more than one sentence. A long quote is not stronger evidence, it is just harder to check.",
   "Report each signal at most once. If the same signal appears twice, quote the clearest instance.",
   "Judge each signal on its own. Do not let a strong impression from one carry the rest.",
+  // Deliberately NOT instructed to skip its working. Telling the scanner to
+  // "return the observations and nothing else" was measured on the golden set:
+  // ordering fell from 39/39 to 38/39, exact-band from 86 to 76 percent, QWK from
+  // 0.973 to 0.920, and the two clearest regressions were signals it simply
+  // stopped noticing. Its narration is most of the output tokens and most of the
+  // latency, and it is also where the accuracy comes from.
   "The answer may be in Arabic. Judge it exactly as you would in English, and quote the Arabic verbatim.",
   NO_DASH_RULE,
   DATA_NOT_INSTRUCTIONS,
@@ -236,10 +242,19 @@ export async function scanAnswer(input: {
     ...keepInGroup(judgment.data.signals, JUDGMENT_SCAN_CODES),
   ]);
 
+  // Never trust the length of what the scanner returned. It can restate a rubric
+  // point in its own words, split one into two, or return the same point twice,
+  // and a live run did exactly that: 4 "matched" against a 3 point rubric, which
+  // reported as 133 percent coverage. Map every claim back onto the real rubric
+  // and count the distinct points that were actually hit.
+  const coveredIndexes = matchRubricPoints(input.rubricPoints, coverage.data.matched);
+  const matched = coveredIndexes.map((i) => input.rubricPoints[i]);
+  const missing = input.rubricPoints.filter((_, i) => !coveredIndexes.includes(i));
+
   const evidence: AnswerEvidence = {
     structure: build.data.structure,
     signals,
-    matchedRubricPoints: coverage.data.matched.length,
+    matchedRubricPoints: matched.length,
     totalRubricPoints: input.rubricPoints.length,
     affords: input.affords,
     degenerate: input.degenerate,
@@ -248,13 +263,99 @@ export async function scanAnswer(input: {
   return {
     read: readAnswer(text, evidence),
     evidence,
-    matched: coverage.data.matched.map((m) => m.point),
-    missing: coverage.data.missing,
+    matched,
+    missing,
     misconceptions: coverage.data.misconceptions.map((m) => `${m.claim} (${m.correction})`),
     feedback: coverage.data.feedback,
     scannedText: text,
     costUsd: build.costUsd + judgment.costUsd + coverage.costUsd,
   };
+}
+
+// Which rubric points a set of coverage claims actually lands on, as indexes into
+// the rubric. A claim that matches no rubric point is dropped rather than counted,
+// and two claims landing on the same point count once, so coverage can never
+// exceed the number of points that exist.
+export function matchRubricPoints(
+  rubricPoints: string[],
+  claims: Array<{ point: string }>,
+): number[] {
+  const rubric = rubricPoints.map(normalizePoint);
+  const keyWords = discriminatingWords(rubric);
+  const covered = new Set<number>();
+
+  for (const claim of claims) {
+    const c = normalizePoint(claim.point);
+    if (c.length === 0) continue;
+    const exact = rubric.indexOf(c);
+    if (exact >= 0) {
+      covered.add(exact);
+      continue;
+    }
+    // The scanner is asked to copy the point verbatim and usually paraphrases,
+    // so score every point and take the best, never the first that overlaps.
+    const hit = bestMatch(rubric, keyWords, c);
+    if (hit >= 0) covered.add(hit);
+  }
+  return [...covered].sort((a, b) => a - b);
+}
+
+function normalizePoint(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// The words that actually tell one rubric point apart from another: those that do
+// NOT appear in most of the other points. A word every point shares carries no
+// evidence, and the alternative, a stop word list, would have to be written per
+// language. This is language-agnostic, which matters because the assessment runs
+// in Arabic too, where content words are routinely two or three characters and any
+// length-based filter would quietly throw the meaning away.
+function discriminatingWords(rubric: string[]): string[][] {
+  const wordsPer = rubric.map((r) => [...new Set(r.split(" ").filter(Boolean))]);
+  const seenIn = new Map<string, number>();
+  for (const words of wordsPer) {
+    for (const w of words) seenIn.set(w, (seenIn.get(w) ?? 0) + 1);
+  }
+  const shared = Math.max(1, Math.floor(rubric.length / 2));
+  return wordsPer.map((words) => {
+    const kept = words.filter((w) => (seenIn.get(w) ?? 0) <= shared);
+    // A point whose every word is common still has to be matchable on something.
+    return kept.length > 0 ? kept : words;
+  });
+}
+
+function bestMatch(rubric: string[], keyWords: string[][], claim: string): number {
+  const claimWords = new Set(claim.split(" ").filter(Boolean));
+  let best = -1;
+  let bestScore = 0;
+
+  for (let i = 0; i < rubric.length; i++) {
+    const kw = keyWords[i];
+    const shared = kw.filter((w) => claimWords.has(w)).length;
+    let score = kw.length > 0 ? shared / kw.length : 0;
+
+    // One string containing the other is strong evidence, scored by how much of
+    // the longer one is covered. That way, where two points overlap, the more
+    // specific one wins instead of whichever came first in the rubric.
+    if (rubric[i].includes(claim)) {
+      score = Math.max(score, claim.length / rubric[i].length);
+    } else if (claim.includes(rubric[i])) {
+      score = Math.max(score, rubric[i].length / claim.length);
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = i;
+    }
+  }
+
+  // Half the point has to be there. Below that this is a different claim, and
+  // attaching it to the nearest point would inflate coverage.
+  return bestScore >= 0.5 ? best : -1;
 }
 
 // Each lens is only asked about its own signals, but the schema enum is shared,
