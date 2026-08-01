@@ -39,8 +39,27 @@ export const MAX_QUESTIONS_PER_TOPIC = 5;
 // Fixed whole-session length: the assessment always asks exactly this many
 // questions, then reports (the session does NOT stop early on convergence, so the
 // user always completes a full assessment). Overridable via env for cheap
-// end-to-end test runs (defaults to 25).
-export const GLOBAL_MAX_QUESTIONS = Number(process.env.MAX_QUESTIONS ?? 25);
+// end-to-end test runs.
+//
+// These are DEFAULTS FOR A NEW SESSION ONLY. The length a running session obeys is
+// stamped on Session.maxQuestions at start, because this module is evaluated once
+// per process: changing the env (or restarting on a new default) would otherwise
+// silently change the length of an assessment already in progress.
+const MAX_QUESTIONS_OVERRIDE = process.env.MAX_QUESTIONS
+  ? Number(process.env.MAX_QUESTIONS)
+  : undefined;
+
+export const GLOBAL_MAX_QUESTIONS = MAX_QUESTIONS_OVERRIDE ?? 25;
+
+// Text mode asks fewer questions because each one carries far more information: a
+// graded open answer is worth roughly two to four dichotomous items, so 12 written
+// answers measure more than 25 multiple-choice picks did. See docs/PLAN-v2.md.
+export const TEXT_MAX_QUESTIONS = MAX_QUESTIONS_OVERRIDE ?? 12;
+
+// Which mode a NEW session starts in. Existing sessions keep the mode stamped on
+// their row, so flipping this never disturbs a run in progress.
+export const DEFAULT_ASSESSMENT_MODE: "mcq" | "text" =
+  process.env.ASSESSMENT_MODE === "text" ? "text" : "mcq";
 
 // The "101" level. Every topic OPENS here (a simple intro question) and every
 // topic's ability estimate STARTS here, then climbs only on evidence. Like a

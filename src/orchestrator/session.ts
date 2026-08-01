@@ -9,10 +9,15 @@ import { shuffleMcqOptions } from "@/core/shuffle";
 import { roleWarmupOpener, templatedOpener } from "@/core/opener";
 import { difficultyBrief } from "@/core/ladder";
 import { getRoleBank } from "@/data/role-banks";
-import { GLOBAL_MAX_QUESTIONS } from "@/core/constants";
+import {
+  DEFAULT_ASSESSMENT_MODE,
+  GLOBAL_MAX_QUESTIONS,
+  TEXT_MAX_QUESTIONS,
+} from "@/core/constants";
 import { applyGrade, decide, deterministicConfidence, initTopicState } from "@/core/policy";
 import { computeFinalScore } from "@/core/scoring";
 import type {
+  AssessmentMode,
   EngineDecision,
   Grade,
   Language,
@@ -97,6 +102,16 @@ function isUniqueViolation(err: unknown): boolean {
   return (
     typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002"
   );
+}
+
+// The mode and length a NEW session is stamped with. Read once here, then stored
+// on the row, so the running session never consults the env again.
+function newSessionSettings(): { mode: AssessmentMode; maxQuestions: number } {
+  const mode = DEFAULT_ASSESSMENT_MODE;
+  return {
+    mode,
+    maxQuestions: mode === "text" ? TEXT_MAX_QUESTIONS : GLOBAL_MAX_QUESTIONS,
+  };
 }
 
 interface RubricJson {
@@ -544,6 +559,7 @@ export async function startSession(input: {
     startLevel: t.startLevel,
   }));
   const states = blueprintTopics.map(initTopicState);
+  const settings = newSessionSettings();
 
   const session = await prisma.session.create({
     data: {
@@ -553,6 +569,8 @@ export async function startSession(input: {
       persona: input.persona ? JSON.stringify(input.persona) : null,
       language,
       status: "active",
+      mode: settings.mode,
+      maxQuestions: settings.maxQuestions,
       topics: {
         create: states.map((s, i) => ({
           name: s.name,
@@ -591,7 +609,7 @@ export async function startSession(input: {
   });
   if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
 
-  const decision = decide(states, 0);
+  const decision = decide(states, 0, session.maxQuestions);
   if (decision.kind !== "ask") {
     return { ok: false, reason: "The engine produced no first question." };
   }
@@ -627,6 +645,7 @@ async function startLiveSession(input: {
   const subject = input.specialization ?? input.role;
   const opener = roleWarmupOpener(subject, language);
   const provisional = initTopicState({ name: subject, importance: 1, startLevel: opener.level });
+  const settings = newSessionSettings();
 
   const session = await prisma.session.create({
     data: {
@@ -636,6 +655,8 @@ async function startLiveSession(input: {
       persona: input.persona ? JSON.stringify(input.persona) : null,
       language,
       status: "active",
+      mode: settings.mode,
+      maxQuestions: settings.maxQuestions,
       blueprintPending: true,
       topics: {
         create: [
@@ -1124,6 +1145,7 @@ async function continueSession(
     candidateName: string | null;
     persona: string | null;
     language: string;
+    maxQuestions: number;
     topics: { id: string; name: string }[];
   },
   states: TopicState[],
@@ -1135,7 +1157,7 @@ async function continueSession(
     ? (JSON.parse(session.persona) as Persona)
     : undefined;
 
-  const decision = decide(states, totalAnswered);
+  const decision = decide(states, totalAnswered, session.maxQuestions);
 
   if (decision.kind === "ask") {
     // Replay guard: an earlier attempt (or a raced duplicate) may already have
@@ -1334,7 +1356,7 @@ export async function getSessionState(sessionId: string): Promise<SessionStateRe
     role: session.role,
     specialization: session.specialization ?? undefined,
     language: session.language as Language,
-    totalQuestions: GLOBAL_MAX_QUESTIONS,
+    totalQuestions: session.maxQuestions,
     answeredCount,
   };
 
@@ -1359,7 +1381,7 @@ export async function getSessionState(sessionId: string): Promise<SessionStateRe
   // decide() is pure and the topic rows already reflect every stored grade, so
   // re-running it reproduces the ceilingProbe/discovery flags the original ask
   // used (the same trick the replay path uses).
-  const decision = decide(states, answeredCount);
+  const decision = decide(states, answeredCount, session.maxQuestions);
   const openTopic = session.topics.find((t) => t.id === open.topicId);
   return {
     ...base,

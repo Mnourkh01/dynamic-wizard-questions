@@ -138,14 +138,17 @@ export function runningAbility(topics: TopicState[]): number {
 //      tie-broken by highest uncertainty.
 // Always returns a valid index while there are topics, so the ONLY thing that ends
 // a session is the fixed question count.
-export function selectTopicIndex(topics: TopicState[]): number {
+export function selectTopicIndex(
+  topics: TopicState[],
+  maxQuestions: number = GLOBAL_MAX_QUESTIONS,
+): number {
   if (topics.length === 0) return -1;
 
   // A topic's fair share of the budget, so every topic is reached: e.g. 25
   // questions over 7 topics is ~3 each before moving on (leftovers refine later).
   const softTarget = Math.max(
     MIN_QUESTIONS_PER_TOPIC,
-    Math.floor(GLOBAL_MAX_QUESTIONS / topics.length),
+    Math.floor(maxQuestions / topics.length),
   );
 
   let inProgress = -1;
@@ -183,9 +186,15 @@ export function selectTopicIndex(topics: TopicState[]): number {
 // early on convergence. Only the very first question is a written warm-up; every
 // later topic continues at the running ability (carried via seedTheta), never
 // resetting to an easy warm-up.
-export function decide(topics: TopicState[], totalAnswered: number): EngineDecision {
-  if (totalAnswered >= GLOBAL_MAX_QUESTIONS) return { kind: "done" };
-  const topicIndex = selectTopicIndex(topics);
+export function decide(
+  topics: TopicState[],
+  totalAnswered: number,
+  // The length THIS session was started with, read from its row. Defaulted so
+  // existing callers and tests keep the module-level budget.
+  maxQuestions: number = GLOBAL_MAX_QUESTIONS,
+): EngineDecision {
+  if (totalAnswered >= maxQuestions) return { kind: "done" };
+  const topicIndex = selectTopicIndex(topics, maxQuestions);
   if (topicIndex < 0) return { kind: "done" };
   const topic = topics[topicIndex];
 

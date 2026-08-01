@@ -21,6 +21,12 @@ model Session {
   persona        String? // JSON: { background?, years? }
   language       String        @default("en") // "en" | "ar"
   status     String            @default("active") // active | done | abandoned
+  // Stamped once at start and never changed for this session. The assessment mode
+  // and length must NOT be read from module-level env at submit time: an env flip
+  // (or a process restart on a new default) would otherwise change the format and
+  // the total length of a run already in progress.
+  mode         String          @default("mcq") // "mcq" | "text"
+  maxQuestions Int             @default(25)
   blueprintPending Boolean      @default(false) // live path: real topics still being built in the background
   finalScore Int? // 0..1000, set when done
   reportJson String? // full SessionReport JSON, persisted for the report permalink
@@ -38,6 +44,10 @@ model Topic {
   sessionId     String
   session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   name             String
+  // Canonical tag from a fixed vocabulary, used to key learning resources. The
+  // display name is free-text agent output and differs per language, so it can
+  // never be a lookup key.
+  tag              String?
   order            Int // stable display order
   importance       Int     @map("weight") // this topic's share of the 1000-point total
   theta            Float // live ability estimate, scale 1..10
@@ -70,10 +80,22 @@ model Question {
   format       String  @default("text") // "text" | "mcq"
   optionsJson  String? // JSON string[] of options, mcq only
   correctIndex Int? // 0-based correct option, mcq only (never sent to the client)
+  // The engine's decision for this question, PERSISTED rather than re-derived.
+  // getSessionState used to rebuild the ask flags by re-running decide() over
+  // topic state, which only holds while every input to that decision is itself
+  // persisted. Intent selection has a seeded tie-break and reads an evidence
+  // ledger, so the decision is stored here and read back verbatim on resume.
+  intent       String? // the code-chosen question intent, text mode
+  affordsJson  String? // JSON string[]: which signal axes this question can elicit
+  targetLevel  Float? // the 1..10 level aimed at (difficulty stays the integer the UI labels)
   createdAt  DateTime @default(now())
 
   answer Answer?
 
+  // One question per slot. continueSession and getSessionState both look up "the
+  // unanswered question at order = answered + 1"; without this, two rows at the
+  // same order would let resume serve a different question than submit graded.
+  @@unique([sessionId, order])
   @@index([sessionId])
   @@index([topicId])
 }
@@ -100,6 +122,13 @@ model Evaluation {
   missing                 String // JSON string[]
   misconceptions          String // JSON string[]
   feedback                String
+  // Text mode. The band is the read of THIS answer (1..6); observations are the
+  // quote-verified signals it was derived from, and the axis profile is what the
+  // report's "how you think" view is built from. JSON for the same reason the
+  // fields above are: SQLite has no array column.
+  band                    Int?
+  observationsJson        String?
+  axisProfileJson         String?
   createdAt               DateTime @default(now())
 }
 

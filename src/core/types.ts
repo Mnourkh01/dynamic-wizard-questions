@@ -3,6 +3,11 @@
 
 export type Language = "en" | "ar";
 
+// How a session asks its questions. Stamped on the session at start and fixed for
+// its lifetime: "mcq" is the v1 pre-generated bank, "text" is the adaptive written
+// interview. A session never changes mode mid-run.
+export type AssessmentMode = "mcq" | "text";
+
 export interface Persona {
   background?: string;
   years?: number;
