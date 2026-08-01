@@ -6,6 +6,9 @@ import {
   MAX_QUESTIONS_PER_TOPIC,
   SIGMA_FLOOR,
   START_THETA,
+  STOP_STABLE_BANDS,
+  TEXT_MAX_QUESTIONS,
+  TEXT_MIN_QUESTIONS,
 } from "./constants";
 import {
   applyGrade,
@@ -16,6 +19,7 @@ import {
   nextDifficulty,
   runningAbility,
   selectTopicIndex,
+  shouldStopEarly,
 } from "./policy";
 import type { Grade, TopicBlueprint, TopicState } from "./types";
 
@@ -237,5 +241,47 @@ describe("decide", () => {
     expect(d.format).toBe("mcq");
     expect(d.seedTheta).toBe(6); // carried from the assessed topic
     expect(d.difficulty).toBe(6);
+  });
+});
+
+describe("early stop (written interview)", () => {
+  // A band series with a settled tail: enough answers, last readings identical.
+  const settled = (band: number) =>
+    Array.from({ length: TEXT_MIN_QUESTIONS }, (_, i) =>
+      i < TEXT_MIN_QUESTIONS - STOP_STABLE_BANDS ? 3 : band,
+    );
+
+  it("stops once the minimum is reached and the last bands read identical", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS, settled(5))).toBe(true);
+  });
+
+  it("also stops for a stable floor candidate (the mercy case)", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS, settled(1))).toBe(true);
+  });
+
+  it("never stops below the minimum, even on identical bands", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS - 1, [5, 5, 5, 5, 5, 5, 5])).toBe(false);
+  });
+
+  it("keeps going while the reading wobbles", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS, [3, 3, 3, 3, 3, 4, 5, 5])).toBe(false);
+  });
+
+  it("keeps going while the candidate is still climbing", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS, [2, 3, 3, 4, 4, 5, 5, 6])).toBe(false);
+  });
+
+  it("an ungraded answer in the window blocks the stop", () => {
+    expect(shouldStopEarly(TEXT_MIN_QUESTIONS, [3, 3, 3, 3, 3, 5, null, 5])).toBe(false);
+  });
+
+  it("decide ends a text session early on a settled reading, and only a text session", () => {
+    const topics = [topic({ answeredCount: TEXT_MIN_QUESTIONS, theta: 7 })];
+    const bands = settled(5);
+    expect(decide(topics, TEXT_MIN_QUESTIONS, TEXT_MAX_QUESTIONS, "text", bands).kind).toBe("done");
+    // Same evidence, MCQ mode: runs the full fixed length.
+    expect(decide(topics, TEXT_MIN_QUESTIONS, GLOBAL_MAX_QUESTIONS, "mcq", bands).kind).toBe("ask");
+    // No band evidence passed (resume snapshot, older callers): never stops early.
+    expect(decide(topics, TEXT_MIN_QUESTIONS, TEXT_MAX_QUESTIONS, "text").kind).toBe("ask");
   });
 });

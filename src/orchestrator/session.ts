@@ -1430,7 +1430,22 @@ async function continueSession(
     ? (JSON.parse(session.persona) as Persona)
     : undefined;
 
-  const decision = decide(states, totalAnswered, session.maxQuestions, mode);
+  // Text mode may end before its cap once the band reading has settled. The
+  // bands are ordered by question order, not createdAt: order is unique per
+  // session (enforced by an index) while two grades can share a timestamp, and
+  // an idempotent replay must reach exactly the same stop decision.
+  const bands =
+    mode === "text"
+      ? (
+          await prisma.evaluation.findMany({
+            where: { answer: { question: { sessionId: session.id } } },
+            orderBy: { answer: { question: { order: "asc" } } },
+            select: { band: true },
+          })
+        ).map((e) => e.band)
+      : undefined;
+
+  const decision = decide(states, totalAnswered, session.maxQuestions, mode, bands);
 
   if (decision.kind === "ask") {
     // Replay guard: an earlier attempt (or a raced duplicate) may already have

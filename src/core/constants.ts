@@ -56,6 +56,17 @@ export const GLOBAL_MAX_QUESTIONS = MAX_QUESTIONS_OVERRIDE ?? 25;
 // answers measure more than 25 multiple-choice picks did. See docs/PLAN-v2.md.
 export const TEXT_MAX_QUESTIONS = MAX_QUESTIONS_OVERRIDE ?? 12;
 
+// Early stop for the written interview. After this many graded answers the
+// session may end before TEXT_MAX_QUESTIONS, as soon as the level reading has
+// settled (see shouldStopEarly in policy.ts). Code decides from stored bands;
+// no agent is ever asked whether to stop.
+export const TEXT_MIN_QUESTIONS = 8;
+// The reading counts as settled when this many consecutive recent answers read
+// the SAME band. Identical, not merely close: a wobble means the interview is
+// still learning something, and the cost of continuing is at most a few
+// questions while the cost of a wrong early report is the whole product.
+export const STOP_STABLE_BANDS = 3;
+
 // Which mode a NEW session starts in. Existing sessions keep the mode stamped on
 // their row, so flipping this never disturbs a run in progress.
 export const DEFAULT_ASSESSMENT_MODE: "mcq" | "text" =

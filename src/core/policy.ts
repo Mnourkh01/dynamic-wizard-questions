@@ -11,7 +11,9 @@ import {
   SIGMA_FLOOR,
   SIGMA_THRESHOLD,
   START_THETA,
+  STOP_STABLE_BANDS,
   STRONG_SCORE,
+  TEXT_MIN_QUESTIONS,
   THETA_MAX,
   THETA_MIN,
   WEAK_SCORE,
@@ -193,11 +195,29 @@ export function selectTopicIndex(
   return best;
 }
 
-// The single deterministic decision function. The session ALWAYS runs exactly
+// Whether the written interview has learned enough to end before its maximum.
+// Deterministic and strict: enough answers AND the last few level readings
+// identical. A senior holding band 5 across different question shapes is done at
+// the minimum; any wobble, or an ungraded answer in the window, keeps the
+// interview alive to the cap. Bands come from stored evaluations, oldest first,
+// so a replayed or resumed session computes exactly the same verdict.
+export function shouldStopEarly(
+  totalAnswered: number,
+  bands: Array<number | null>,
+): boolean {
+  if (totalAnswered < TEXT_MIN_QUESTIONS) return false;
+  const window = bands.slice(-STOP_STABLE_BANDS);
+  if (window.length < STOP_STABLE_BANDS) return false;
+  if (window.some((b) => b === null)) return false;
+  return new Set(window).size === 1;
+}
+
+// The single deterministic decision function. An MCQ session ALWAYS runs exactly
 // GLOBAL_MAX_QUESTIONS questions (a full assessment), then reports; it never stops
-// early on convergence. Only the very first question is a written warm-up; every
-// later topic continues at the running ability (carried via seedTheta), never
-// resetting to an easy warm-up.
+// early on convergence. A text session may end early once the band reading has
+// settled (shouldStopEarly). Only the very first question is a written warm-up;
+// every later topic continues at the running ability (carried via seedTheta),
+// never resetting to an easy warm-up.
 export function decide(
   topics: TopicState[],
   totalAnswered: number,
@@ -207,8 +227,15 @@ export function decide(
   // The mode THIS session was started in. In text mode every question after the
   // warm-up is written too, so the format never varies within a session.
   mode: AssessmentMode = "mcq",
+  // Text mode only: the band of every graded answer so far, oldest first, read
+  // from stored evaluations. Callers that do not pass it (MCQ paths, the resume
+  // snapshot, older tests) never stop early, which is the safe default.
+  bands?: Array<number | null>,
 ): EngineDecision {
   if (totalAnswered >= maxQuestions) return { kind: "done" };
+  if (mode === "text" && bands && shouldStopEarly(totalAnswered, bands)) {
+    return { kind: "done" };
+  }
   const topicIndex = selectTopicIndex(topics, maxQuestions);
   if (topicIndex < 0) return { kind: "done" };
   const topic = topics[topicIndex];
