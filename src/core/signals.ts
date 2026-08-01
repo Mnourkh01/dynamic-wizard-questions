@@ -340,7 +340,16 @@ export function readBand(evidence: AnswerEvidence): BandRead {
       capAt(4, "settled on one approach without weighing it against another");
     }
   }
-  if (has("names_alternative") && !has("makes_decision")) {
+  // A reasoned rejection or a decision rule IS choosing: "X cannot work here
+  // because Y" commits as hard as "I pick Z". This cap is for a menu of options
+  // left hanging with nothing weighed and nothing picked. Firing it on a reasoned
+  // rejection dragged a genuine band-6 answer to 4 in the gate (idx-6-staff).
+  if (
+    has("names_alternative") &&
+    !has("makes_decision") &&
+    !has("rejects_alternative_with_reason") &&
+    !has("gives_decision_procedure")
+  ) {
     capAt(4, "listed the options but never chose one");
   }
 

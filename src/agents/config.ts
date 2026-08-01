@@ -58,15 +58,16 @@ export const AGENTS: Record<AgentName, AgentConfig> = {
     maxBudgetUsd: 1.0,
     timeoutMs: DEFAULT_AGENT_TIMEOUT_MS,
   },
-  // Text mode's critical path: three parallel reads of one written answer, each
+  // Text mode's critical path: four parallel reads of one written answer, each
   // reporting quote-backed observations and no numbers. Sonnet is the starting
   // point because it already passes the validity gate as the grader; the gate
   // decides whether that holds, and the escalation if it does not is Opus here,
   // not a longer prompt.
-  // timeoutMs: three concurrent CLI children make each one slower than a lone
+  // timeoutMs: four concurrent CLI children make each one slower than a lone
   // call, so the deadline is roomier than the default.
   // 8000 because a staff-level answer legitimately trips many signals at once and
-  // the judgment scan overflowed 4000 on exactly that case in the golden set.
+  // the former single judgment scan overflowed 4000 on exactly that case in the
+  // golden set (that lens is now split into decision + evidence).
   answerScanner: {
     model: "sonnet",
     maxOutputTokens: 8000,
@@ -105,7 +106,8 @@ const TIMEOUT_BY_LABEL: Record<string, AgentName> = {
   "answer-grader": "answerGrader",
   "interview-writer": "questionWriter",
   "answer-scanner-build": "answerScanner",
-  "answer-scanner-judgment": "answerScanner",
+  "answer-scanner-decision": "answerScanner",
+  "answer-scanner-evidence": "answerScanner",
   "answer-scanner-coverage": "answerScanner",
   "report-writer": "reportWriter",
   "mcq-writer": "mcqWriter",

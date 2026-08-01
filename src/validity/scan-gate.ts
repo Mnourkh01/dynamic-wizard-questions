@@ -28,6 +28,7 @@ interface Outcome {
   item: GoldenItem;
   bands: number[];
   band: number;
+  structures: string[];
   promotions: string[];
   caps: string[];
   matched: number;
@@ -57,6 +58,7 @@ function consensus(bands: number[]): number {
 
 async function runItem(item: GoldenItem, repeats: number): Promise<Outcome> {
   const bands: number[] = [];
+  const structures: string[] = [];
   let promotions: string[] = [];
   let caps: string[] = [];
   let matched = 0;
@@ -72,6 +74,7 @@ async function runItem(item: GoldenItem, repeats: number): Promise<Outcome> {
         degenerate: false,
       });
       bands.push(res.read.band);
+      structures.push(res.evidence.structure);
       promotions = res.read.promotions;
       caps = res.read.caps;
       matched = res.evidence.matchedRubricPoints;
@@ -81,13 +84,14 @@ async function runItem(item: GoldenItem, repeats: number): Promise<Outcome> {
       item,
       bands,
       band: 0,
+      structures,
       promotions,
       caps,
       matched,
       error: err instanceof Error ? err.message : String(err),
     };
   }
-  return { item, bands, band: consensus(bands), promotions, caps, matched };
+  return { item, bands, band: consensus(bands), structures, promotions, caps, matched };
 }
 
 // Quadratic weighted kappa over the band scale. Chance-corrected, and it
@@ -127,7 +131,13 @@ async function main(): Promise<void> {
   const only = arg("--only");
   const repeats = Number(arg("--repeat") ?? 1);
   const concurrency = Math.max(1, Number(arg("--concurrency") ?? DEFAULT_ITEM_CONCURRENCY));
-  const items = only ? GOLDEN_ANSWERS.filter((i) => i.id.startsWith(only)) : GOLDEN_ANSWERS;
+  // Comma-separated prefixes, so two specific items can be re-run against each
+  // other (an ordering violation always names a pair, not a single item).
+  const prefixes = only ? only.split(",").filter(Boolean) : [];
+  const items =
+    prefixes.length > 0
+      ? GOLDEN_ANSWERS.filter((i) => prefixes.some((p) => i.id.startsWith(p)))
+      : GOLDEN_ANSWERS;
 
   if (items.length === 0) {
     console.error(`No golden items match "${only}".`);
@@ -170,6 +180,9 @@ async function main(): Promise<void> {
         o.band,
       ).padEnd(11)} rubric ${o.matched}/${o.item.rubricPoints.length}`,
     );
+    // The structure read sets the base band, so a band miss with correct signals
+    // usually traces here; print it so a miss can be diagnosed from the output.
+    console.log(`    shape: ${[...new Set(o.structures)].join(", ")}`);
     if (o.promotions.length > 0) console.log(`    up:   ${o.promotions.join(" | ")}`);
     if (o.caps.length > 0) console.log(`    cap:  ${o.caps.join(" | ")}`);
     if (o.band !== o.item.expectedBand) console.log(`    why:  ${o.item.note}`);

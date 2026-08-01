@@ -127,18 +127,25 @@ export type InterviewQuestionOutput = z.infer<typeof InterviewQuestionOutputSche
 // --- Answer scanner (text mode) ---------------------------------------------
 // The scanner reports OBSERVATIONS, never a level, a score, or any number. Code
 // maps observations onto a band (core/signals.ts). Splitting the read across
-// three calls is deliberate: judging many criteria inside one conversation drags
+// four calls is deliberate: judging many criteria inside one conversation drags
 // them all toward the first impression, and separate calls measurably match human
-// distributions better. Three rather than one per criterion because every call
+// distributions better. Four rather than one per criterion because every call
 // spawns its own CLI child here, and twenty concurrent children is not a trade
 // worth making on a single local machine.
 
-// The two lenses the signal scans are split along. Core owns the vocabulary; the
-// agent layer decides how the reading is divided across calls.
+// The lenses the signal scans are split along. Core owns the vocabulary; the
+// agent layer decides how the reading is divided across calls. The former single
+// judgment lens carried 24 definitions and its output tokens scaled with them
+// (8938 tokens, 84.6s per call, timing out at 180s on long staff-level answers),
+// so it is split into two lenses that each keep their own narration: decision
+// ("did they reason toward a choice, and do they know what breaks") and evidence
+// ("is it grounded in anything real, and is their certainty honest").
 export const BUILD_SCAN_CODES = [...MECHANISM_SIGNALS, ...COVERAGE_SIGNALS] as const;
-export const JUDGMENT_SCAN_CODES = [
+export const DECISION_SCAN_CODES = [
   ...CONDITIONALITY_SIGNALS,
   ...FAILURE_SIGNALS,
+] as const;
+export const EVIDENCE_SCAN_CODES = [
   ...CONCRETENESS_SIGNALS,
   ...CALIBRATION_SIGNALS,
   ...ANTI_SIGNALS,
@@ -176,16 +183,17 @@ export const BuildScanOutputSchema = z.object({
 });
 export type BuildScanOutput = z.infer<typeof BuildScanOutputSchema>;
 
-export const JudgmentScanOutputSchema = z.object({
-  // Headroom above the 24 codes in this lens. Duplicates are removed in code
-  // AFTER validation, so a cap set at exactly the group size would turn one
-  // repeated code into a hard schema failure on an otherwise fine read.
+// One shape serves both the decision and the evidence lens. Headroom above the
+// largest group (13 codes). Duplicates are removed in code AFTER validation, so
+// a cap set at exactly the group size would turn one repeated code into a hard
+// schema failure on an otherwise fine read.
+export const SignalScanOutputSchema = z.object({
   signals: z
     .array(ObservationSchema)
-    .max(30)
+    .max(18)
     .describe("Only signals you actually see, each with its exact quote. An empty list is a valid answer."),
 });
-export type JudgmentScanOutput = z.infer<typeof JudgmentScanOutputSchema>;
+export type SignalScanOutput = z.infer<typeof SignalScanOutputSchema>;
 
 export const CoverageScanOutputSchema = z.object({
   matched: z

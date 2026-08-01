@@ -88,6 +88,42 @@ describe("promotions", () => {
     expect(r.caps).not.toHaveLength(0);
   });
 
+  it("a reasoned rejection counts as choosing, so the undecided cap must not fire", () => {
+    // The exact signal set a live scan returned for the golden staff answer
+    // (idx-6-staff, diagnostic run 2): it rejected an alternative with a reason
+    // but never said "I pick X", and the undecided cap wrongly dragged 6 to 4.
+    const r = readBand(
+      evidence({
+        structure: "generalized_beyond",
+        matched: 3,
+        total: 4,
+        signals: sig(
+          "states_invariant",
+          "reasons_counterfactually",
+          "gives_cost_model",
+          "chains_cause_two_deep",
+          "declares_scope",
+          "states_assumptions",
+          "names_missing_constraint",
+          "gives_detection_signal",
+          "names_failure_mode",
+          "states_limit_or_breaking_point",
+          "says_when_not_to_use_it",
+          "names_recovery_or_blast_radius",
+          "raised_unprompted",
+          "names_alternative",
+          "rejects_alternative_with_reason",
+          "conditioned_hedge",
+          "concrete_incident",
+          "quantity_with_unit",
+          "specific_artifact",
+        ),
+      }),
+    );
+    expect(r.band).toBe(6);
+    expect(r.caps).toHaveLength(0);
+  });
+
   it("caps an undecided answer even when the question never invited a trade-off", () => {
     // Volunteering an alternative proves the candidate could engage with one, so
     // this cap is self-affording and does not go through the affordance gate.

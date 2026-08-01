@@ -15,11 +15,12 @@ import {
   BUILD_SCAN_CODES,
   BuildScanOutputSchema,
   CoverageScanOutputSchema,
-  JUDGMENT_SCAN_CODES,
-  JudgmentScanOutputSchema,
+  DECISION_SCAN_CODES,
+  EVIDENCE_SCAN_CODES,
+  SignalScanOutputSchema,
 } from "./schemas";
 
-// The answer scanner. Three calls in parallel, each reporting observations with
+// The answer scanner. Four calls in parallel, each reporting observations with
 // verbatim quotes, none of them producing a level or a score. core/signals.ts owns
 // the mapping from observations to a band, so what "senior" means is code, not
 // prompt. See docs/research/answer-level-signals.md for why each signal is here.
@@ -47,9 +48,9 @@ const SIGNAL_DEFINITIONS: Record<SignalCode, string> = {
     "points out a fact it would need to know, or asks for one, rather than assuming silently",
   names_alternative: "names a different approach that could also have been taken",
   rejects_alternative_with_reason:
-    "says why an approach was NOT chosen, with the reason, not merely that it exists",
+    "says why an approach was NOT chosen, with the reason, not merely that it exists. Saying an approach cannot work for this case, with the reason, counts, including inside an account of past work",
   makes_decision:
-    "picks one approach OVER another and says so. Proposing the only approach it mentions is not a decision; there has to be something it is being chosen instead of",
+    "picks one approach OVER another and says so. Proposing the only approach it mentions is not a decision; there has to be something it is being chosen instead of. A choice made inside an account of past work counts, such as dropping one approach and replacing it with another",
   gives_decision_procedure:
     "gives a rule for deciding, of the form: it depends on X, and if X then this, otherwise that",
   frames_reversibility_or_risk:
@@ -101,7 +102,7 @@ const STRUCTURE_GUIDE = [
   "single_point: one relevant point, with nothing connected to it",
   "listed_unlinked: several correct pieces, listed one after another, never tied together into a purpose. A long, complete-looking answer often lands here",
   "integrated_purpose: it says what the thing is FOR, or the principle at work, and ties the pieces to that",
-  "generalized_beyond: it reframes the question, challenges its premise, or draws a conclusion wider than what was asked",
+  "generalized_beyond: it reframes the question, challenges its premise, or draws a conclusion wider than what was asked. Replacing the asked question with the deeper question underneath it counts",
 ].join("\n");
 
 const COMMON_RULES = [
@@ -186,14 +187,36 @@ export async function scanAnswer(input: {
     groupId: input.sessionId,
   });
 
-  const judgmentCall = runAgent({
-    agent: "answer-scanner-judgment",
+  // The judgment read is two lenses, not one. A single lens carrying all 24
+  // definitions produced output that scaled with them (8938 tokens, 84.6s per
+  // call) and timed out at 180s on long staff-level answers. Each half keeps its
+  // own narration, which is where the accuracy comes from (see COMMON_RULES).
+  const decisionCall = runAgent({
+    agent: "answer-scanner-decision",
     model: AGENTS.answerScanner.model,
     system: [
-      "You read one written technical answer and report WHAT IT SHOWS ABOUT THE WRITER'S JUDGMENT. You never assign a level and never produce a score.",
+      "You read one written technical answer and report WHETHER THE WRITER REASONED TOWARD A CHOICE AND WHETHER THEY KNOW WHAT BREAKS. You never assign a level and never produce a score.",
       "",
       "Report every signal below that you can see:",
-      definitionsFor(JUDGMENT_SCAN_CODES),
+      definitionsFor(DECISION_SCAN_CODES),
+      "",
+      COMMON_RULES,
+    ].join("\n"),
+    user: [context, languageLine(input.language)].join("\n\n"),
+    schema: SignalScanOutputSchema,
+    maxOutputTokens: AGENTS.answerScanner.maxOutputTokens,
+    maxBudgetUsd: AGENTS.answerScanner.maxBudgetUsd,
+    groupId: input.sessionId,
+  });
+
+  const evidenceCall = runAgent({
+    agent: "answer-scanner-evidence",
+    model: AGENTS.answerScanner.model,
+    system: [
+      "You read one written technical answer and report WHETHER IT IS GROUNDED IN ANYTHING REAL AND WHETHER ITS CERTAINTY IS HONEST. You never assign a level and never produce a score.",
+      "",
+      "Report every signal below that you can see:",
+      definitionsFor(EVIDENCE_SCAN_CODES),
       "",
       "Two of these are easy to get wrong, so read them again before you use them:",
       "conditioned_hedge versus bare_hedge. Uncertainty is not automatically a weakness. Someone saying it depends on the read to write ratio, or I would need to see the p99 first, is showing judgment. Someone saying I think so, not sure, is showing a gap. The difference is whether the uncertainty attaches to something real.",
@@ -202,7 +225,7 @@ export async function scanAnswer(input: {
       COMMON_RULES,
     ].join("\n"),
     user: [context, languageLine(input.language)].join("\n\n"),
-    schema: JudgmentScanOutputSchema,
+    schema: SignalScanOutputSchema,
     maxOutputTokens: AGENTS.answerScanner.maxOutputTokens,
     maxBudgetUsd: AGENTS.answerScanner.maxBudgetUsd,
     groupId: input.sessionId,
@@ -231,15 +254,17 @@ export async function scanAnswer(input: {
     groupId: input.sessionId,
   });
 
-  const [build, judgment, coverage] = await Promise.all([
+  const [build, decision, evidenceRead, coverage] = await Promise.all([
     buildCall,
-    judgmentCall,
+    decisionCall,
+    evidenceCall,
     coverageCall,
   ]);
 
   const signals = dedupe([
     ...keepInGroup(build.data.signals, BUILD_SCAN_CODES),
-    ...keepInGroup(judgment.data.signals, JUDGMENT_SCAN_CODES),
+    ...keepInGroup(decision.data.signals, DECISION_SCAN_CODES),
+    ...keepInGroup(evidenceRead.data.signals, EVIDENCE_SCAN_CODES),
   ]);
 
   // Never trust the length of what the scanner returned. It can restate a rubric
@@ -268,7 +293,7 @@ export async function scanAnswer(input: {
     misconceptions: coverage.data.misconceptions.map((m) => `${m.claim} (${m.correction})`),
     feedback: coverage.data.feedback,
     scannedText: text,
-    costUsd: build.costUsd + judgment.costUsd + coverage.costUsd,
+    costUsd: build.costUsd + decision.costUsd + evidenceRead.costUsd + coverage.costUsd,
   };
 }
 
