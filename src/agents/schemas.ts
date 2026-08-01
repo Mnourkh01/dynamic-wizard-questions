@@ -8,6 +8,7 @@ import {
   COVERAGE_SIGNALS,
   FAILURE_SIGNALS,
   MECHANISM_SIGNALS,
+  SIGNAL_CODES,
   STRUCTURE_LEVELS,
 } from "@/core/signals";
 
@@ -143,16 +144,22 @@ export const JUDGMENT_SCAN_CODES = [
   ...ANTI_SIGNALS,
 ] as const;
 
-const observation = <T extends readonly [string, ...string[]]>(codes: T) =>
-  z.object({
-    code: z.enum(codes).describe("The signal you observed"),
-    quote: z
-      .string()
-      .min(1)
-      .describe(
-        "The exact words from the answer that show it, copied character for character. An observation whose quote is not found in the answer is discarded.",
-      ),
-  });
+// One enum for every lens, deliberately, even though each lens is only ASKED
+// about its own group. Restricting the enum per lens made the schema reject any
+// signal the lens volunteered from the other group, which sent the whole list
+// back through the repair loop: measured live at about 10k output tokens per
+// judgment call and roughly three minutes a question. keepInGroup in scanner.ts
+// already drops out-of-group codes, so the boundary is enforced in code, once,
+// where a rejection costs nothing.
+const ObservationSchema = z.object({
+  code: z.enum(SIGNAL_CODES).describe("The signal you observed"),
+  quote: z
+    .string()
+    .min(1)
+    .describe(
+      "The exact words from the answer that show it, copied character for character. An observation whose quote is not found in the answer is discarded.",
+    ),
+});
 
 export const BuildScanOutputSchema = z.object({
   structure: z
@@ -163,14 +170,19 @@ export const BuildScanOutputSchema = z.object({
     .min(1)
     .describe("One sentence saying why that shape, referring to what the answer does"),
   signals: z
-    .array(observation(BUILD_SCAN_CODES))
+    .array(ObservationSchema)
+    .max(12)
     .describe("Only signals you actually see, each with its exact quote. An empty list is a valid answer."),
 });
 export type BuildScanOutput = z.infer<typeof BuildScanOutputSchema>;
 
 export const JudgmentScanOutputSchema = z.object({
+  // Headroom above the 24 codes in this lens. Duplicates are removed in code
+  // AFTER validation, so a cap set at exactly the group size would turn one
+  // repeated code into a hard schema failure on an otherwise fine read.
   signals: z
-    .array(observation(JUDGMENT_SCAN_CODES))
+    .array(ObservationSchema)
+    .max(30)
     .describe("Only signals you actually see, each with its exact quote. An empty list is a valid answer."),
 });
 export type JudgmentScanOutput = z.infer<typeof JudgmentScanOutputSchema>;

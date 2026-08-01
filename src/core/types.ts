@@ -49,6 +49,13 @@ export interface Grade {
   matchedCount: number;
   missingCount: number;
   degenerate: boolean; // empty / gibberish / too-short answer flagged by code
+  // True when demonstratedLevel is a real reading of how deep the answer went.
+  // False (the default) when it is a bracket inferred from a right or wrong
+  // pick, which is one-sided evidence: a correct pick proves ability at least at
+  // the item's level and says nothing about the ceiling. Only bracket evidence
+  // gets the one-sided gate in applyGrade; a depth reading may move the estimate
+  // in either direction because it is an actual measurement.
+  measuresDepth?: boolean;
 }
 
 // What the engine decides to do next. `discovery` marks the single warm-up (the

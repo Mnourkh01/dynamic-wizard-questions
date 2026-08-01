@@ -1,9 +1,20 @@
 import { runBlueprint } from "@/agents/blueprint";
 import { runGrader } from "@/agents/grader";
+import { writeQuestion } from "@/agents/interviewer";
 import { runBankBuilder, runMcqQuestion } from "@/agents/mcq";
 import { runQuestion } from "@/agents/question";
 import { runReporter } from "@/agents/reporter";
+import { scanAnswer } from "@/agents/scanner";
 import { classifyAnswer } from "@/core/answers";
+import { INTENT_AFFORDANCES, chooseIntent, type QuestionIntent } from "@/core/intent";
+import {
+  AFFORDANCES,
+  BAND_MAX,
+  type Affordance,
+  type AxisProfile,
+  type Observation,
+  unobservedAxes,
+} from "@/core/signals";
 import { gradeFromMcq, isValidMcq } from "@/core/mcq";
 import { shuffleMcqOptions } from "@/core/shuffle";
 import { roleWarmupOpener, templatedOpener } from "@/core/opener";
@@ -13,6 +24,7 @@ import {
   DEFAULT_ASSESSMENT_MODE,
   GLOBAL_MAX_QUESTIONS,
   TEXT_MAX_QUESTIONS,
+  WEAK_BAND,
 } from "@/core/constants";
 import { applyGrade, decide, deterministicConfidence, initTopicState } from "@/core/policy";
 import { computeFinalScore } from "@/core/scoring";
@@ -147,10 +159,18 @@ function toTopicState(row: {
   };
 }
 
+// What the question writer needs about the session that the engine's decision
+// does not carry: which mode it is running in and what role it is assessing.
+interface AskContext {
+  mode: AssessmentMode;
+  role: string;
+  specialization?: string;
+}
+
 // Generate + persist the next question for a decided topic, then return it. The
 // engine's decision.format chooses the path: "mcq" is served from the pre-built
-// bank (pure DB, no AI, with a single-question live fallback); "text" is a
-// free-text depth probe written by the question agent and graded by AI.
+// bank (pure DB, no AI, with a single-question live fallback); "text" is written
+// live for this candidate and read by the scanner.
 async function askQuestion(
   sessionId: string,
   topicId: string,
@@ -159,14 +179,12 @@ async function askQuestion(
   language: Language,
   persona: Persona | undefined,
   order: number,
+  ctx: AskContext,
 ): Promise<QuestionPayload> {
-  // The engine already decides the format: the 101 opener is a written question
-  // (its depth drives the jump), every later round is a fast MCQ. There is exactly
-  // one written question per topic, so no per-session text cap is needed.
   if (decision.format === "mcq") {
     return askMcq(sessionId, topicId, topicState, decision, language, order);
   }
-  return askText(sessionId, topicId, topicState, decision, language, persona, order);
+  return askText(sessionId, topicId, topicState, decision, language, persona, order, ctx);
 }
 
 // Read the valid, unused bank pool for one topic. Only well-formed rows: a
@@ -315,20 +333,59 @@ async function askText(
   language: Language,
   persona: Persona | undefined,
   order: number,
+  ctx: AskContext,
 ): Promise<QuestionPayload> {
-  // The 101 opener (discovery) is templated: no AI call, so Begin is fast and the
-  // question is guaranteed to be a single plain prompt. Any other free-text
-  // question (not currently produced by the engine) falls back to the agent.
+  // The 101 opener (discovery) is templated: no AI call, so Begin stays instant
+  // and the question is guaranteed to be a single plain prompt. It is a
+  // wide_opener by construction, which is the whole point of it: one question
+  // every level can start and a strong practitioner can take much further.
   let text: string;
   let rubricPoints: string[];
   let gold: string;
   let level: number;
+  let intent: QuestionIntent | undefined;
+  let affords: readonly Affordance[] | undefined;
+
   if (decision.discovery) {
     const o = templatedOpener(topicState.name, language);
     text = o.text;
     rubricPoints = o.rubricPoints;
     gold = o.gold;
     level = o.level;
+    intent = "wide_opener";
+    affords = INTENT_AFFORDANCES.wide_opener;
+  } else if (ctx.mode === "text") {
+    const asked = await prisma.question.findMany({
+      where: { sessionId },
+      select: { text: true },
+    });
+    const ledger = await readEvidenceLedger(sessionId);
+    const choice = chooseIntent({
+      sessionId,
+      order,
+      theta: topicState.theta,
+      unobserved: ledger.unobserved,
+      consecutiveWeak: ledger.consecutiveWeak,
+      hasPreviousAnswer: ledger.previous !== undefined,
+    });
+    const written = await writeQuestion({
+      role: ctx.role,
+      specialization: ctx.specialization,
+      topic: topicState.name,
+      choice,
+      alreadyAsked: asked.map((a) => a.text),
+      previousQuestion: ledger.previous?.question,
+      previousAnswer: ledger.previous?.answer,
+      persona,
+      language,
+      sessionId,
+    });
+    text = written.text;
+    rubricPoints = written.rubricPoints;
+    gold = written.gold;
+    level = choice.targetLevel;
+    intent = choice.intent;
+    affords = written.affords;
   } else {
     const asked = await prisma.question.findMany({
       where: { sessionId },
@@ -367,6 +424,12 @@ async function askText(
       rubric: JSON.stringify(rubric),
       maxScore: 100,
       format: "text",
+      // Persisted, never re-derived. getSessionState rebuilds the payload from
+      // this row alone, and the answer is scanned against the affordances the
+      // question was actually written with.
+      intent: intent ?? null,
+      affordsJson: affords ? JSON.stringify(affords) : null,
+      targetLevel: level,
     },
   });
 
@@ -384,7 +447,51 @@ async function askText(
     discovery: decision.discovery,
     format: "text",
     text,
+    ...(intent ? { intent } : {}),
   };
+}
+
+// What the intent chooser needs about the session so far: which signal axes have
+// never been observed, whether the last answers were weak, and the exchange a
+// follow-up would be built from. Read from stored evaluations, so a resumed
+// session sees exactly what an uninterrupted one would.
+async function readEvidenceLedger(sessionId: string): Promise<{
+  unobserved: ReturnType<typeof unobservedAxes>;
+  consecutiveWeak: number;
+  previous?: { question: string; answer: string };
+}> {
+  const evals = await prisma.evaluation.findMany({
+    where: { answer: { question: { sessionId } } },
+    include: { answer: { include: { question: { select: { text: true } } } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const profiles = evals
+    .map((e) => (e.axisProfileJson ? (safeParseJson(e.axisProfileJson) as AxisProfile | null) : null))
+    .filter((p): p is AxisProfile => p !== null);
+
+  let consecutiveWeak = 0;
+  for (let i = evals.length - 1; i >= 0; i--) {
+    if (evals[i].band !== null && evals[i].band! <= WEAK_BAND) consecutiveWeak++;
+    else break;
+  }
+
+  const last = evals[evals.length - 1];
+  return {
+    unobserved: unobservedAxes(profiles),
+    consecutiveWeak,
+    previous: last
+      ? { question: last.answer.question.text, answer: last.answer.text }
+      : undefined,
+  };
+}
+
+function safeParseJson(json: string): unknown {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 }
 
 // Build the bank rows for ONE topic (one bank-builder call). Idempotent (skips a
@@ -609,7 +716,7 @@ export async function startSession(input: {
   });
   if (rows.length > 0) await prisma.bankQuestion.createMany({ data: rows });
 
-  const decision = decide(states, 0, session.maxQuestions);
+  const decision = decide(states, 0, session.maxQuestions, settings.mode);
   if (decision.kind !== "ask") {
     return { ok: false, reason: "The engine produced no first question." };
   }
@@ -623,6 +730,7 @@ export async function startSession(input: {
     language,
     input.persona,
     1,
+    { mode: settings.mode, role: input.role, specialization },
   );
 
   return { ok: true, sessionId: session.id, question };
@@ -696,6 +804,9 @@ async function startLiveSession(input: {
       rubric: JSON.stringify(rubric),
       maxScore: 100,
       format: "text",
+      intent: "wide_opener",
+      affordsJson: JSON.stringify(INTENT_AFFORDANCES.wide_opener),
+      targetLevel: opener.level,
     },
   });
 
@@ -711,6 +822,7 @@ async function startLiveSession(input: {
       discovery: true,
       format: "text",
       text: opener.text,
+      intent: "wide_opener",
     },
   };
 }
@@ -916,9 +1028,10 @@ async function submitAnswerOnce(input: {
     throw new DomainError("session_done", "This assessment is already finished.");
   }
 
-  const { grade, publicGrade, llmConfidence, misconceptions, answerRow } =
+  const { grade, publicGrade, llmConfidence, misconceptions, answerRow, band, observations, axisProfile } =
     await gradeSubmission({
       sessionId: input.sessionId,
+      mode: session.mode as AssessmentMode,
       question,
       rubric,
       submitted: input.answer,
@@ -954,6 +1067,9 @@ async function submitAnswerOnce(input: {
           missing: JSON.stringify(publicGrade.missing),
           misconceptions: JSON.stringify(misconceptions),
           feedback: publicGrade.feedback,
+          band: band ?? null,
+          observationsJson: observations ? JSON.stringify(observations) : null,
+          axisProfileJson: axisProfile ? JSON.stringify(axisProfile) : null,
         },
       }),
       prisma.topic.update({
@@ -1004,10 +1120,16 @@ interface GradeOutcome {
   llmConfidence: number;
   misconceptions: string[];
   answerRow: { id: string; text: string };
+  // Text mode only: the band this answer read as, the quote-backed observations
+  // it was derived from, and the per-axis profile the report is built from.
+  band?: number;
+  observations?: Observation[];
+  axisProfile?: AxisProfile;
 }
 
 interface GradeInput {
   sessionId: string;
+  mode: AssessmentMode;
   question: {
     id: string;
     text: string;
@@ -1015,6 +1137,7 @@ interface GradeInput {
     difficulty: number;
     optionsJson: string | null;
     correctIndex: number | null;
+    affordsJson: string | null;
   };
   rubric: RubricJson;
   submitted: string;
@@ -1024,7 +1147,102 @@ interface GradeInput {
 
 async function gradeSubmission(input: GradeInput): Promise<GradeOutcome> {
   if (input.question.format === "mcq") return gradeMcqSubmission(input);
+  if (input.mode === "text") return gradeScannedSubmission(input);
   return gradeWrittenSubmission(input);
+}
+
+// Text mode. The scanner reports observations, core/signals maps them to a band,
+// and nothing in between produces a number. `score` here is deliberately rubric
+// COVERAGE, not a quality judgment: how much of what was asked for the answer
+// addressed. The level lives in the band, so the two stay separable and neither
+// has to stand in for the other.
+async function gradeScannedSubmission(input: GradeInput): Promise<GradeOutcome> {
+  const { question, rubric, existingAnswer } = input;
+  const answerRow = await ensureAnswerRow(question.id, input.submitted, existingAnswer);
+  const degenerate = classifyAnswer(answerRow.text).degenerate;
+
+  if (degenerate) {
+    return {
+      grade: {
+        score: 0,
+        demonstratedLevel: 1,
+        matchedCount: 0,
+        missingCount: rubric.points.length,
+        degenerate: true,
+        measuresDepth: true,
+      },
+      publicGrade: {
+        score: 0,
+        demonstratedLevel: 1,
+        band: 1,
+        matched: [],
+        missing: rubric.points,
+        feedback: "No gradable answer was given for this question.",
+      },
+      llmConfidence: 0,
+      misconceptions: [],
+      answerRow,
+      band: 1,
+    };
+  }
+
+  const scan = await scanAnswer({
+    question: question.text,
+    rubricPoints: rubric.points,
+    gold: rubric.gold,
+    answer: answerRow.text,
+    affords: parseAffords(question.affordsJson),
+    language: input.language,
+    degenerate: false,
+    sessionId: input.sessionId,
+  });
+
+  const total = rubric.points.length;
+  // A question always ships with at least two rubric points, so an empty rubric
+  // means a corrupted row rather than a coverage of zero. Reading it as "covered
+  // nothing" would quietly bottom out the score, so fall back to the band, which
+  // was measured from the answer itself and needs no rubric.
+  const score =
+    total > 0
+      ? Math.round((scan.matched.length / total) * 100)
+      : Math.round(((scan.read.band - 1) / (BAND_MAX - 1)) * 100);
+
+  return {
+    grade: {
+      score,
+      demonstratedLevel: scan.read.demonstratedLevel,
+      matchedCount: scan.matched.length,
+      missingCount: scan.missing.length,
+      degenerate: false,
+      measuresDepth: true,
+    },
+    publicGrade: {
+      score,
+      demonstratedLevel: scan.read.demonstratedLevel,
+      band: scan.read.band,
+      matched: scan.matched,
+      missing: scan.missing,
+      feedback: scan.feedback,
+      axisProfile: scan.read.axisProfile,
+    },
+    llmConfidence: 0,
+    misconceptions: scan.misconceptions,
+    answerRow,
+    band: scan.read.band,
+    observations: scan.evidence.signals,
+    axisProfile: scan.read.axisProfile,
+  };
+}
+
+// Affordances are persisted on the question so a replay or a resume reads the
+// exact set the answer was judged against, instead of re-deriving one that may
+// have drifted. Unknown values are dropped rather than trusted.
+function parseAffords(json: string | null): Affordance[] {
+  const raw = safeParseArray(json ?? "[]");
+  const known = raw.filter((a): a is Affordance =>
+    (AFFORDANCES as readonly string[]).includes(a),
+  );
+  return known.length > 0 ? known : [...INTENT_AFFORDANCES.wide_opener];
 }
 
 async function gradeMcqSubmission(input: GradeInput): Promise<GradeOutcome> {
@@ -1197,6 +1415,7 @@ async function continueSession(
     persona: string | null;
     language: string;
     maxQuestions: number;
+    mode: string;
     topics: { id: string; name: string }[];
   },
   states: TopicState[],
@@ -1204,11 +1423,12 @@ async function continueSession(
   publicGrade: PublicGrade,
 ): Promise<AnswerResult> {
   const language = session.language as Language;
+  const mode = session.mode as AssessmentMode;
   const persona: Persona | undefined = session.persona
     ? (JSON.parse(session.persona) as Persona)
     : undefined;
 
-  const decision = decide(states, totalAnswered, session.maxQuestions);
+  const decision = decide(states, totalAnswered, session.maxQuestions, mode);
 
   if (decision.kind === "ask") {
     // Replay guard: an earlier attempt (or a raced duplicate) may already have
@@ -1238,6 +1458,7 @@ async function continueSession(
           ...(open.format === "mcq"
             ? { options: safeParseArray(open.optionsJson ?? "[]") }
             : {}),
+          ...(open.intent ? { intent: open.intent } : {}),
         },
       };
     }
@@ -1261,6 +1482,7 @@ async function continueSession(
       language,
       persona,
       totalAnswered + 1,
+      { mode, role: session.role, specialization: session.specialization ?? undefined },
     );
     return { done: false, grade: publicGrade, question: question2 };
   }
@@ -1432,7 +1654,12 @@ export async function getSessionState(sessionId: string): Promise<SessionStateRe
   // decide() is pure and the topic rows already reflect every stored grade, so
   // re-running it reproduces the ceilingProbe/discovery flags the original ask
   // used (the same trick the replay path uses).
-  const decision = decide(states, answeredCount, session.maxQuestions);
+  const decision = decide(
+    states,
+    answeredCount,
+    session.maxQuestions,
+    session.mode as AssessmentMode,
+  );
   const openTopic = session.topics.find((t) => t.id === open.topicId);
   return {
     ...base,
@@ -1450,6 +1677,10 @@ export async function getSessionState(sessionId: string): Promise<SessionStateRe
       ...(open.format === "mcq"
         ? { options: safeParseArray(open.optionsJson ?? "[]") }
         : {}),
+      // Read from the row, never re-derived: the intent chooser has a seeded
+      // tie-break and reads an evidence ledger, so re-running it on resume could
+      // legitimately land somewhere else than the question already on screen.
+      ...(open.intent ? { intent: open.intent } : {}),
     },
   };
 }

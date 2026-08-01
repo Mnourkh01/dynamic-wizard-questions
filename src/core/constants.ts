@@ -80,3 +80,8 @@ export const STRONG_SCORE = 75;
 // Below this raw score the answer is treated as failing the question (used only
 // to reset the consecutive-strong streak, not in the theta math).
 export const WEAK_SCORE = 40;
+
+// At or below this band an answer counts as weak for the purpose of choosing the
+// next question. Two of these in a row triggers an easier question, to tell "does
+// not know this area" apart from "had one bad round".
+export const WEAK_BAND = 2;

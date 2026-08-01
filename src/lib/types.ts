@@ -15,14 +15,22 @@ export interface QuestionPayload {
   text: string;
   // Present for mcq only. The correct index is NEVER sent to the client.
   options?: string[];
+  // Text mode: what this question is for. The UI uses it to label the round
+  // ("following up on your answer", "trade-off"), so the candidate can tell a
+  // deliberate follow-up from a change of subject.
+  intent?: string;
 }
 
 export interface PublicGrade {
-  score: number;
+  score: number; // rubric coverage in text mode, correctness in mcq mode
   demonstratedLevel: number;
   matched: string[];
   missing: string[];
   feedback: string;
+  // Text mode: the level this one answer read as, 1 to 6, and how it scored
+  // across the seven signal axes. Absent in mcq mode.
+  band?: number;
+  axisProfile?: Record<string, number>;
 }
 
 export interface SessionReport extends FinalScore {

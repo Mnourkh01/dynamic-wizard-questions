@@ -6,6 +6,7 @@ import {
   type SignalCode,
   type StructureLevel,
   bandToLevel,
+  levelToBand,
   readAnswer,
   readBand,
   unobservedAxes,
@@ -595,6 +596,25 @@ describe("ordering across the ladder", () => {
     }
     expect(levels[0]).toBeLessThan(4);
     expect(levels[levels.length - 1]).toBe(10);
+  });
+});
+
+describe("levelToBand", () => {
+  it("round-trips every band through its level", () => {
+    for (let band = 1; band <= 6; band++) {
+      expect(levelToBand(bandToLevel(band))).toBe(band);
+    }
+  });
+
+  it("snaps a level between two bands to the nearer one", () => {
+    expect(levelToBand(1)).toBe(1);
+    expect(levelToBand(6)).toBe(3);
+    expect(levelToBand(8)).toBe(4);
+    expect(levelToBand(10)).toBe(6);
+  });
+
+  it("does not throw on nonsense", () => {
+    expect(levelToBand(Number.NaN)).toBe(1);
   });
 });
 

@@ -17,7 +17,13 @@ import {
   WEAK_SCORE,
 } from "./constants";
 import { clamp, clampLevel } from "./ladder";
-import type { EngineDecision, Grade, TopicBlueprint, TopicState } from "./types";
+import type {
+  AssessmentMode,
+  EngineDecision,
+  Grade,
+  TopicBlueprint,
+  TopicState,
+} from "./types";
 
 // Build the starting state for a topic. The running estimate starts LOW, at the
 // 101 opener level, and climbs only on evidence, so the difficulty is an organized
@@ -68,7 +74,13 @@ export function applyGrade(topic: TopicState, grade: Grade): TopicState {
   const delta = grade.demonstratedLevel - topic.theta;
   const passing = grade.score >= STRONG_SCORE && !grade.degenerate;
   const failing = grade.score < WEAK_SCORE;
-  const gatedDelta = (passing && delta < 0) || (failing && delta > 0) ? 0 : delta;
+  // A depth reading of a written answer is a real point estimate, so it moves the
+  // estimate in whichever direction it points. Only bracket evidence is gated.
+  const gatedDelta = grade.measuresDepth
+    ? delta
+    : (passing && delta < 0) || (failing && delta > 0)
+      ? 0
+      : delta;
   const theta = clamp(topic.theta + K * c * gatedDelta, THETA_MIN, THETA_MAX);
   const sigma = Math.max(topic.sigma * (1 - K * c), SIGMA_FLOOR);
   const answeredCount = topic.answeredCount + 1;
@@ -192,11 +204,15 @@ export function decide(
   // The length THIS session was started with, read from its row. Defaulted so
   // existing callers and tests keep the module-level budget.
   maxQuestions: number = GLOBAL_MAX_QUESTIONS,
+  // The mode THIS session was started in. In text mode every question after the
+  // warm-up is written too, so the format never varies within a session.
+  mode: AssessmentMode = "mcq",
 ): EngineDecision {
   if (totalAnswered >= maxQuestions) return { kind: "done" };
   const topicIndex = selectTopicIndex(topics, maxQuestions);
   if (topicIndex < 0) return { kind: "done" };
   const topic = topics[topicIndex];
+  const continuingFormat = mode === "text" ? "text" : "mcq";
 
   if (topic.answeredCount === 0) {
     if (totalAnswered === 0) {
@@ -211,8 +227,8 @@ export function decide(
         format: "text",
       };
     }
-    // Every later topic CONTINUES at the running ability (no warm-up reset), as a
-    // fast MCQ. seedTheta carries that level into the fresh topic.
+    // Every later topic CONTINUES at the running ability (no warm-up reset).
+    // seedTheta carries that level into the fresh topic.
     const seed = runningAbility(topics);
     return {
       kind: "ask",
@@ -220,11 +236,18 @@ export function decide(
       difficulty: clampLevel(seed),
       ceilingProbe: false,
       discovery: false,
-      format: "mcq",
+      format: continuingFormat,
       seedTheta: seed,
     };
   }
 
-  const { difficulty, ceilingProbe, format } = nextDifficulty(topic);
-  return { kind: "ask", topicIndex, difficulty, ceilingProbe, discovery: false, format };
+  const { difficulty, ceilingProbe } = nextDifficulty(topic);
+  return {
+    kind: "ask",
+    topicIndex,
+    difficulty,
+    ceilingProbe,
+    discovery: false,
+    format: continuingFormat,
+  };
 }

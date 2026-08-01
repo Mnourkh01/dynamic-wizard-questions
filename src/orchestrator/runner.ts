@@ -3,6 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { z } from "zod";
 import { costBreakdown, costSoFarUsd, resetCostUsd, runAgent } from "@/agents/client";
 import { prisma } from "@/db/client";
+import { bandName, levelToBand } from "@/core/signals";
 import type { Language, Persona } from "@/core/types";
 import { shutdownObservability } from "@/observability/langfuse";
 import {
@@ -70,26 +71,42 @@ function parseArgs(argv: string[]): Args {
 
 const CandidateSchema = z.object({ answer: z.string() });
 
-// A synthetic candidate answering AT a target level, so a full session can run
-// unattended for the gate. This is a test/dev driver, not a product agent.
+// Who is answering, at each band. Deliberately written as a PERSON with a career
+// stage, not as a list of the signals the scanner looks for. Prompting the
+// simulator with the instrument's own checklist would make a full-session run
+// circular: it would emit the signals and the scanner would find them, proving
+// nothing. The real validity evidence is the hand-written golden set
+// (npm run validity:scan). This harness only answers "does a full session run,
+// and does the score move with the candidate".
+const CANDIDATE_PERSONAS: Record<number, string> = {
+  1: "someone who has just started learning this. They half-remember terms from a tutorial, mix a few up, and answer the question they wish had been asked.",
+  2: "a junior with about a year in. They know the happy path and can name the right tools, but have never had to debug this under pressure, so their answer stops at what to do and never reaches why.",
+  3: "a solid mid-level engineer with a few years in. They understand how the thing works and can explain it, they have been burned once or twice so they know a gotcha, but they tend to describe options rather than commit to one.",
+  4: "a senior engineer. They scope the question before answering, quantify what matters, name the approach they rejected and why, and mention how they would know it broke in production.",
+  5: "a staff engineer. They question whether the stated problem is the real one, argue about what does NOT need to be built, name where their own advice stops working, and reach for a concrete incident from their own history.",
+  6: "a principal engineer thinking at the level of several teams and several years, weighing organisational and business cost alongside the technical call.",
+};
+
+// A synthetic candidate answering as a person at a target band, so a full session
+// can run unattended. Test and dev driver, never a product agent.
 async function autoAnswer(
   role: string,
   question: QuestionPayload,
   level: number,
   language: Language,
 ): Promise<string> {
+  const band = levelToBand(level);
   const res = await runAgent({
     agent: "sim-candidate",
     model: "sonnet",
     system: [
-      "You simulate a job candidate answering a skill-assessment question at a SPECIFIC level.",
-      "A level-2 answer is shallow with clear gaps. A level-5 answer is competent but not deep.",
-      "A level-8 answer is precise, covers trade-offs, and shows real depth. Answer AT the given level, no higher, no lower.",
-      "Write only the answer as plain prose.",
+      "You are role-playing a real engineer answering an interview question. Answer exactly as this person would, including what they would NOT think to say.",
+      `You are ${CANDIDATE_PERSONAS[band] ?? CANDIDATE_PERSONAS[3]}`,
+      "Do not perform. Do not write a model answer. Write what this specific person types into a text box in a couple of minutes, with their own habits and their own blind spots.",
+      "Write only the answer, as plain prose. No headings, no bullet scaffolding unless this person would naturally use it.",
     ].join("\n"),
     user: [
-      `Role: ${role}`,
-      `Target level: ${level} of 10`,
+      `Role being assessed: ${role}`,
       `Question: ${question.text}`,
       language === "ar" ? "Answer in Arabic." : "Answer in English.",
     ].join("\n\n"),
@@ -104,7 +121,7 @@ async function autoAnswer(
 
 function printQuestion(q: QuestionPayload): void {
   const probe = q.ceilingProbe ? "  [ceiling probe]" : "";
-  const kind = q.format === "mcq" ? " (MCQ)" : "";
+  const kind = q.format === "mcq" ? " (MCQ)" : q.intent ? ` (${q.intent})` : "";
   console.log(`\n─ Q${q.order} · ${q.topicName} · level ${q.difficulty}${kind}${probe}`);
   console.log(q.text);
   if (q.format === "mcq" && q.options) {
@@ -322,8 +339,11 @@ async function main(): Promise<void> {
       break;
     }
 
+    const g = result.grade;
+    const bandPart =
+      g.band !== undefined ? ` · band ${g.band} ${bandName(g.band)}` : "";
     console.log(
-      `  grade: ${result.grade.score}/100 · demonstrated level ${result.grade.demonstratedLevel}`,
+      `  grade: ${g.score}/100 coverage${bandPart} · level ${g.demonstratedLevel.toFixed(1)}`,
     );
 
     if (result.done) {

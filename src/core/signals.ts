@@ -40,6 +40,18 @@ export function bandName(band: number): string {
   return BAND_NAMES[clampBand(band)] ?? "novice";
 }
 
+// The inverse of bandToLevel: the band a point on the 1..10 scale sits in. Used
+// where something outside the instrument speaks levels (the CLI harness, the
+// report header) and needs the band's words for it.
+export function levelToBand(level: number): number {
+  if (!Number.isFinite(level)) return BAND_MIN;
+  let best = 0;
+  for (let i = 1; i < BAND_TO_LEVEL.length; i++) {
+    if (Math.abs(BAND_TO_LEVEL[i] - level) < Math.abs(BAND_TO_LEVEL[best] - level)) best = i;
+  }
+  return best + 1;
+}
+
 function clampBand(band: number): number {
   if (!Number.isFinite(band)) return BAND_MIN;
   return Math.max(BAND_MIN, Math.min(BAND_MAX, Math.round(band)));
