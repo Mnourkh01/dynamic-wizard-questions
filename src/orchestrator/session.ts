@@ -916,92 +916,15 @@ async function submitAnswerOnce(input: {
     throw new DomainError("session_done", "This assessment is already finished.");
   }
 
-  let grade: Grade;
-  let publicGrade: PublicGrade;
-  let llmConfidence = 0;
-  // Confident-but-wrong claims the grader flags in a written answer. MCQs and
-  // degenerate answers have none; previously this was always persisted as [].
-  let misconceptions: string[] = [];
-  let answerRow: { id: string; text: string };
-
-  if (question.format === "mcq") {
-    // Deterministic scoring, no AI: the answer is the 0-based selected option.
-    const options = safeParseArray(question.optionsJson ?? "[]");
-    // A retry after a mid-submit crash grades the STORED answer text, so the
-    // grade always matches what was persisted first. INVARIANT this relies on:
-    // Answer.text for an MCQ is either the exact option text (valid pick) or
-    // the raw submitted string (invalid pick, indexOf misses, falls through to
-    // re-parsing the same raw string). If answerText persistence ever changes
-    // shape, this replay lookup must change with it.
-    const storedIndex = existingAnswer ? options.indexOf(existingAnswer.text) : -1;
-    const selected = storedIndex >= 0 ? storedIndex : Number.parseInt(input.answer, 10);
-    const valid = Number.isInteger(selected) && selected >= 0 && selected < options.length;
-    const correct = valid && selected === question.correctIndex;
-    const correctText =
-      question.correctIndex != null ? (options[question.correctIndex] ?? "") : "";
-    const answerText = valid ? options[selected] : input.answer;
-    // Grade at the level of the item actually served (rubric.level), not the
-    // level the engine asked for: the bank only holds levels 2/4/5/7/9, so the
-    // nearest pick can differ from the requested difficulty.
-    grade = gradeFromMcq(correct, rubric.level ?? question.difficulty);
-    publicGrade = {
-      score: grade.score,
-      demonstratedLevel: grade.demonstratedLevel,
-      matched: correct ? [correctText] : [],
-      missing: correct ? [] : [correctText],
-      feedback: correct ? "Correct." : `Not quite. The correct answer was: ${correctText}`,
-    };
-    answerRow = await ensureAnswerRow(question.id, answerText, existingAnswer);
-  } else {
-    // Answer-first persistence: store the user's text BEFORE the grader call, so
-    // a grader failure never loses what they typed, and a retry of the same
-    // submit grades the stored row instead of tripping the unique constraint.
-    answerRow = await ensureAnswerRow(question.id, input.answer, existingAnswer);
-    // Degenerate answers are scored 0 in code, saving a grading call; otherwise
-    // the grader agent judges the stored text.
-    const classification = classifyAnswer(answerRow.text);
-    if (classification.degenerate) {
-      grade = {
-        score: 0,
-        demonstratedLevel: 1,
-        matchedCount: 0,
-        missingCount: rubric.points.length,
-        degenerate: true,
-      };
-      publicGrade = {
-        score: 0,
-        demonstratedLevel: 1,
-        matched: [],
-        missing: rubric.points,
-        feedback: "No gradable answer was given for this question.",
-      };
-    } else {
-      const graded = await runGrader({
-        question: question.text,
-        rubricPoints: rubric.points,
-        gold: rubric.gold,
-        answer: answerRow.text,
-        language,
-        sessionId: input.sessionId,
-      });
-      llmConfidence = graded.data.confidence;
-      misconceptions = graded.data.misconceptions;
-      grade = {
-        score: graded.data.score,
-        demonstratedLevel: graded.data.demonstratedLevel,
-        matchedCount: graded.data.matched.length,
-        missingCount: graded.data.missing.length,
-        degenerate: false,
-      };
-      publicGrade = {
-        score: graded.data.score,
-        demonstratedLevel: graded.data.demonstratedLevel,
-        matched: graded.data.matched,
-        missing: graded.data.missing,
-        feedback: graded.data.feedback,
-      };
-    }
-  }
+  const { grade, publicGrade, llmConfidence, misconceptions, answerRow } =
+    await gradeSubmission({
+      sessionId: input.sessionId,
+      question,
+      rubric,
+      submitted: input.answer,
+      existingAnswer,
+      language,
+    });
 
   // Update the graded topic through the pure engine.
   const topicRow = session.topics.find((t) => t.id === question.topicId);
@@ -1068,6 +991,134 @@ async function submitAnswerOnce(input: {
   }
 
   return continueSession(session, states, totalAnswered, publicGrade);
+}
+
+// One graded submission, whatever format the question was. This is the seam the
+// written interview plugs into: everything above it (idempotency, persistence,
+// the engine update) is format-agnostic, and everything below it is the one
+// format's own business.
+interface GradeOutcome {
+  grade: Grade;
+  publicGrade: PublicGrade;
+  // The scanner's or grader's own certainty. Recorded for logs, never in the math.
+  llmConfidence: number;
+  misconceptions: string[];
+  answerRow: { id: string; text: string };
+}
+
+interface GradeInput {
+  sessionId: string;
+  question: {
+    id: string;
+    text: string;
+    format: string;
+    difficulty: number;
+    optionsJson: string | null;
+    correctIndex: number | null;
+  };
+  rubric: RubricJson;
+  submitted: string;
+  existingAnswer: { id: string; text: string } | null;
+  language: Language;
+}
+
+async function gradeSubmission(input: GradeInput): Promise<GradeOutcome> {
+  if (input.question.format === "mcq") return gradeMcqSubmission(input);
+  return gradeWrittenSubmission(input);
+}
+
+async function gradeMcqSubmission(input: GradeInput): Promise<GradeOutcome> {
+  const { question, rubric, existingAnswer } = input;
+  // Deterministic scoring, no AI: the answer is the 0-based selected option.
+  const options = safeParseArray(question.optionsJson ?? "[]");
+  // A retry after a mid-submit crash grades the STORED answer text, so the
+  // grade always matches what was persisted first. INVARIANT this relies on:
+  // Answer.text for an MCQ is either the exact option text (valid pick) or
+  // the raw submitted string (invalid pick, indexOf misses, falls through to
+  // re-parsing the same raw string). If answerText persistence ever changes
+  // shape, this replay lookup must change with it.
+  const storedIndex = existingAnswer ? options.indexOf(existingAnswer.text) : -1;
+  const selected = storedIndex >= 0 ? storedIndex : Number.parseInt(input.submitted, 10);
+  const valid = Number.isInteger(selected) && selected >= 0 && selected < options.length;
+  const correct = valid && selected === question.correctIndex;
+  const correctText = question.correctIndex != null ? (options[question.correctIndex] ?? "") : "";
+  const answerText = valid ? options[selected] : input.submitted;
+  // Grade at the level of the item actually served (rubric.level), not the
+  // level the engine asked for: the bank only holds levels 2/4/5/7/9, so the
+  // nearest pick can differ from the requested difficulty.
+  const grade = gradeFromMcq(correct, rubric.level ?? question.difficulty);
+  return {
+    grade,
+    publicGrade: {
+      score: grade.score,
+      demonstratedLevel: grade.demonstratedLevel,
+      matched: correct ? [correctText] : [],
+      missing: correct ? [] : [correctText],
+      feedback: correct ? "Correct." : `Not quite. The correct answer was: ${correctText}`,
+    },
+    llmConfidence: 0,
+    misconceptions: [],
+    answerRow: await ensureAnswerRow(question.id, answerText, existingAnswer),
+  };
+}
+
+async function gradeWrittenSubmission(input: GradeInput): Promise<GradeOutcome> {
+  const { question, rubric, existingAnswer } = input;
+  // Answer-first persistence: store the user's text BEFORE the grader call, so
+  // a grader failure never loses what they typed, and a retry of the same
+  // submit grades the stored row instead of tripping the unique constraint.
+  const answerRow = await ensureAnswerRow(question.id, input.submitted, existingAnswer);
+
+  // Degenerate answers are scored 0 in code, saving a grading call.
+  if (classifyAnswer(answerRow.text).degenerate) {
+    return {
+      grade: {
+        score: 0,
+        demonstratedLevel: 1,
+        matchedCount: 0,
+        missingCount: rubric.points.length,
+        degenerate: true,
+      },
+      publicGrade: {
+        score: 0,
+        demonstratedLevel: 1,
+        matched: [],
+        missing: rubric.points,
+        feedback: "No gradable answer was given for this question.",
+      },
+      llmConfidence: 0,
+      misconceptions: [],
+      answerRow,
+    };
+  }
+
+  const graded = await runGrader({
+    question: question.text,
+    rubricPoints: rubric.points,
+    gold: rubric.gold,
+    answer: answerRow.text,
+    language: input.language,
+    sessionId: input.sessionId,
+  });
+  return {
+    grade: {
+      score: graded.data.score,
+      demonstratedLevel: graded.data.demonstratedLevel,
+      matchedCount: graded.data.matched.length,
+      missingCount: graded.data.missing.length,
+      degenerate: false,
+    },
+    publicGrade: {
+      score: graded.data.score,
+      demonstratedLevel: graded.data.demonstratedLevel,
+      matched: graded.data.matched,
+      missing: graded.data.missing,
+      feedback: graded.data.feedback,
+    },
+    llmConfidence: graded.data.confidence,
+    misconceptions: graded.data.misconceptions,
+    answerRow,
+  };
 }
 
 // Find-or-create the Answer row for a question. Tolerates a concurrent create
