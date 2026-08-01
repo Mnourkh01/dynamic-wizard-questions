@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "assess": "tsx src/orchestrator/runner.ts",
     "validity": "tsx src/validity/check.ts",
+    "validity:scan": "tsx src/validity/scan-gate.ts",
     "seed:roles": "tsx scripts/gen-role-banks.ts",
     "regression:always-a": "node scripts/always-a-regression.cjs",
     "verify:banks": "tsx scripts/verify-role-banks.ts",

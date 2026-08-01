@@ -84,6 +84,20 @@ describe("promotions", () => {
       }),
     );
     expect(r.band).toBe(4);
+    expect(r.caps).not.toHaveLength(0);
+  });
+
+  it("caps an undecided answer even when the question never invited a trade-off", () => {
+    // Volunteering an alternative proves the candidate could engage with one, so
+    // this cap is self-affording and does not go through the affordance gate.
+    const r = readBand(
+      evidence({
+        structure: "generalized_beyond",
+        signals: sig("names_alternative", "quantity_with_unit", "concrete_incident", "names_failure_mode", "says_when_not_to_use_it"),
+        affords: ["mechanism", "quantity", "failure", "experience"],
+      }),
+    );
+    expect(r.band).toBe(4);
     expect(r.caps.join(" ")).toContain("never chose one");
   });
 
@@ -257,6 +271,112 @@ describe("the affordance gate", () => {
     );
     expect(invited.band).toBe(3);
     expect(notInvited.band).toBe(4);
+  });
+
+  it("caps at 4 when the question invited a choice and the answer reasoned but never chose", () => {
+    // Regression from the first golden-set run: a mid answer tied a senior one
+    // because one assumption stated in passing satisfied the weaker cap below.
+    const reasonedNoChoice = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "states_assumptions",
+          "names_working_parts",
+          "states_what_it_does",
+          "chains_cause_two_deep",
+          "names_failure_mode",
+          "gives_detection_signal",
+        ),
+      }),
+    );
+    expect(reasonedNoChoice.band).toBe(4);
+    expect(reasonedNoChoice.caps.join(" ")).toContain("without weighing it against another");
+
+    const weighed = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "states_assumptions",
+          "names_working_parts",
+          "states_what_it_does",
+          "chains_cause_two_deep",
+          "names_failure_mode",
+          "gives_detection_signal",
+          "rejects_alternative_with_reason",
+          "makes_decision",
+        ),
+      }),
+    );
+    expect(weighed.band).toBe(5);
+  });
+
+  it("does not treat proposing the only idea mentioned as weighing anything", () => {
+    // The exact live failure: a scanner reads a proposal as a decision, and
+    // without something to decide BETWEEN, that must not clear the cap.
+    const proposedOnly = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "states_assumptions",
+          "makes_decision",
+          "chains_cause_two_deep",
+          "names_working_parts",
+          "states_what_it_does",
+          "names_failure_mode",
+          "gives_detection_signal",
+        ),
+      }),
+    );
+    expect(proposedOnly.band).toBe(4);
+
+    const named = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "states_assumptions",
+          "names_alternative",
+          "makes_decision",
+          "chains_cause_two_deep",
+          "names_working_parts",
+          "states_what_it_does",
+          "names_failure_mode",
+          "gives_detection_signal",
+        ),
+      }),
+    );
+    expect(named.band).toBe(5);
+  });
+
+  it("accepts a decision procedure in place of a single decision", () => {
+    const r = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "states_assumptions",
+          "gives_decision_procedure",
+          "names_failure_mode",
+          "says_when_not_to_use_it",
+          "quantity_with_unit",
+        ),
+      }),
+    );
+    expect(r.band).toBe(5);
+  });
+
+  it("does not demand a decision from a question that never invited one", () => {
+    const r = readBand(
+      evidence({
+        structure: "integrated_purpose",
+        signals: sig(
+          "names_working_parts",
+          "states_what_it_does",
+          "chains_cause_two_deep",
+          "quantity_with_unit",
+        ),
+        affords: ["mechanism", "quantity"],
+      }),
+    );
+    expect(r.band).toBe(5);
   });
 
   it("still credits a candidate who shows more than the question asked for", () => {

@@ -307,8 +307,26 @@ export function readBand(evidence: AnswerEvidence): BandRead {
   if (has("confident_misconception")) {
     capAt(3, "states something wrong with confidence");
   }
-  if (evidence.affords.includes("conditionality") && countIn(CONDITIONALITY_SIGNALS) === 0) {
-    capAt(3, "the question invited a trade-off and none was made");
+  if (evidence.affords.includes("conditionality")) {
+    if (countIn(CONDITIONALITY_SIGNALS) === 0) {
+      capAt(3, "the question invited a trade-off and none was made");
+    }
+    // Above proficient the question is whether they WEIGHED anything, not
+    // whether they answered. Every published ladder puts the mid-to-senior line
+    // here: proposing the one approach that came to mind is competent, comparing
+    // it against something and saying why this one wins is not.
+    //
+    // Requiring a bare "makes_decision" was not enough, and the golden set caught
+    // why twice over: an answer that proposes its only idea reads as a decision
+    // to a scanner, so a mid answer kept tying a senior one. What separates them
+    // is the presence of something to decide BETWEEN.
+    const weighedAnAlternative =
+      has("rejects_alternative_with_reason") ||
+      has("gives_decision_procedure") ||
+      (has("names_alternative") && has("makes_decision"));
+    if (!weighedAnAlternative) {
+      capAt(4, "settled on one approach without weighing it against another");
+    }
   }
   if (has("names_alternative") && !has("makes_decision")) {
     capAt(4, "listed the options but never chose one");

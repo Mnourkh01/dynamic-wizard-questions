@@ -11,6 +11,7 @@ export type AgentName =
   | "topicPlanner"
   | "questionWriter"
   | "answerGrader"
+  | "answerScanner"
   | "reportWriter"
   | "mcqWriter";
 
@@ -57,6 +58,21 @@ export const AGENTS: Record<AgentName, AgentConfig> = {
     maxBudgetUsd: 1.0,
     timeoutMs: DEFAULT_AGENT_TIMEOUT_MS,
   },
+  // Text mode's critical path: three parallel reads of one written answer, each
+  // reporting quote-backed observations and no numbers. Sonnet is the starting
+  // point because it already passes the validity gate as the grader; the gate
+  // decides whether that holds, and the escalation if it does not is Opus here,
+  // not a longer prompt.
+  // timeoutMs: three concurrent CLI children make each one slower than a lone
+  // call, so the deadline is roomier than the default.
+  // 8000 because a staff-level answer legitimately trips many signals at once and
+  // the judgment scan overflowed 4000 on exactly that case in the golden set.
+  answerScanner: {
+    model: "sonnet",
+    maxOutputTokens: 8000,
+    maxBudgetUsd: 0.5,
+    timeoutMs: 180_000,
+  },
   // Synthesize the transcript into a report. Runs once at the end, off the
   // interactive hot path, so Sonnet stays for prose quality.
   // timeoutMs: 240s, the longest prose output in the system on the slower model,
@@ -87,6 +103,10 @@ const TIMEOUT_BY_LABEL: Record<string, AgentName> = {
   "topic-planner": "topicPlanner",
   "question-writer": "questionWriter",
   "answer-grader": "answerGrader",
+  "interview-writer": "questionWriter",
+  "answer-scanner-build": "answerScanner",
+  "answer-scanner-judgment": "answerScanner",
+  "answer-scanner-coverage": "answerScanner",
   "report-writer": "reportWriter",
   "mcq-writer": "mcqWriter",
   // The single-MCQ fallback writer shares the questionWriter budget: same shape
